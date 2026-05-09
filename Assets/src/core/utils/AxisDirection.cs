@@ -2,8 +2,14 @@
 using Unity.Mathematics;
 
 namespace core {
+    public enum Axis : byte {
+        X,
+        Y,
+        Z
+    }
+
     public enum AxisDirection : byte {
-        NegX = 0,
+        NegX,
         PosX,
         NegY,
         PosY,
@@ -32,8 +38,11 @@ namespace core {
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 
-        public static int3 offset(this int3 pos, AxisDirection direction, int value = 1) => pos + direction.int3(value);
+        public static AxisDirection opposite(this AxisDirection direction) =>
+            (AxisDirection)(((byte)direction & 0b110) | (~(byte)direction & 0b1));
+
+        public static Axis axis(this AxisDirection direction) => (Axis)((byte)direction / 2);
         
-        public static int axisIndex(this AxisDirection direction) => ((int)direction & 0b110) >> 1;
+        public static int3 offset(this int3 pos, AxisDirection direction, int value = 1) => pos + direction.int3(value);
     }
 }

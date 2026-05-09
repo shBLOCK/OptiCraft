@@ -1,11 +1,12 @@
-﻿using Unity.Mathematics;
+﻿using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace core {
     [RequireComponent(typeof(GridPosition))]
     public sealed class LaserSource : Device, ITickingDevice {
-        private AxisDirection direction = AxisDirection.PosZ;
-        
+        [SerializeField] private AxisDirection direction = AxisDirection.PosZ;
+
         private Beam beam = null;
 
         public override void reset() {
@@ -15,8 +16,20 @@ namespace core {
         public void tick() {
             if (beam == null) {
                 beam = new Beam.Laser(space, direction, gridPos.offset(direction), 10000).emit();
-                print("Emit beam");
             }
+        }
+        
+        private void Update() {
+            //TODO: tmp
+            updateRendering();
+        }
+        
+        private void OnValidate() {
+            updateRendering();
+        }
+
+        private void updateRendering() {
+            transform.localRotation = Quaternion.FromToRotation(Vector3.forward, direction.float3());
         }
     }
 }

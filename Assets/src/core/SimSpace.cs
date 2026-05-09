@@ -19,6 +19,7 @@ namespace core {
         private Dictionary<int3, Device> posDeviceMap = new();
         
         private List<Beam> beams = new();
+        private List<Beam> beamsStaging = new();
         public event Action<Beam> onBeamAdded; 
         public event Action<Beam> onBeamRemoved; 
 
@@ -32,6 +33,10 @@ namespace core {
             for (int i = 0; i < beams.Count; i++) {
                 var beam = beams[i];
                 if (!beam.tick()) {
+                    getDeviceAt(beam.headPos)?.onBeamEnd(beam);
+                    if (GridUtils.isGridEdge(beam.headPos)) {
+                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamEndEdge(beam);
+                    }
                     beams.RemoveAtSwapBack(i);
                     onBeamRemoved?.Invoke(beam);
                     i--;
@@ -41,9 +46,11 @@ namespace core {
             // beam collision
             foreach (var beam in beams) {
                 if (!beam.beingConsumed) {
+                    print(beam.headPos);
+                    print(getDeviceAt(beam.headPos));
                     getDeviceAt(beam.headPos)?.onBeamHit(beam);
                     if (GridUtils.isGridEdge(beam.headPos)) {
-                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHit(beam);
+                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHitEdge(beam);
                     }
                 }
             }
@@ -54,6 +61,9 @@ namespace core {
                     tickingDevice.tick();
                 }
             }
+            
+            beams.AddRange(beamsStaging);
+            beamsStaging.Clear();
         }
         
         
@@ -63,7 +73,7 @@ namespace core {
         }
 
         internal void _emitBeam(Beam beam) {
-            beams.Add(beam);
+            beamsStaging.Add(beam);
             onBeamAdded?.Invoke(beam);
         }
 

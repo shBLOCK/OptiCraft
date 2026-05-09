@@ -19,7 +19,7 @@ namespace core {
             this.direction = direction;
             this.tailPos = startPos;
         }
-        
+
         public Beam emit() {
             Assert.IsFalse(beingEmitted, "Beam already emitted");
             beingEmitted = true;
@@ -37,17 +37,19 @@ namespace core {
             beingConsumed = true;
         }
 
+        public abstract Beam instantiate(SimSpace space, AxisDirection direction, int3 startPos);
+
         public bool tick() {
             if (!beingEmitted) {
                 tailPos += direction.int3();
             }
-            
+
             if (beingEmitted) length++;
             if (beingConsumed) length--;
-            
+
             wasBeingEmitted = beingEmitted;
             wasBeingConsumed = beingConsumed;
-            
+
             return length > 0;
         }
 
@@ -57,6 +59,10 @@ namespace core {
             public Laser(SimSpace space, AxisDirection direction, int3 startPos, int3 color)
                 : base(space, direction, startPos) {
                 this.color = color;
+            }
+
+            public override Beam instantiate(SimSpace space, AxisDirection direction, int3 startPos) {
+                return new Laser(space, direction, startPos, color);
             }
         }
     }

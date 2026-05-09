@@ -22,11 +22,14 @@ namespace core {
             _gridPosComponent = GetComponent<GridPosition>();
             space.addDevice(this);
         }
-        
-        public virtual void reset() {}
+
+        public virtual void reset() { }
         // public virtual void postTick() {}
-        
-        public virtual void onBeamHit(Beam beam) {}
+
+        public virtual void onBeamHit(Beam beam) { }
+        public virtual void onBeamHitEdge(Beam beam) { }
+        public virtual void onBeamEnd(Beam beam) { }
+        public virtual void onBeamEndEdge(Beam beam) { }
     }
 
     public interface ITickingDevice {
