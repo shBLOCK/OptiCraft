@@ -8,6 +8,18 @@ namespace core {
         Z
     }
 
+    public static class AxisExtensions {
+        public static AxisDirection negDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 0);
+        public static AxisDirection posDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 1);
+        
+        public static float3 float3(this Axis axis) => axis switch {
+            Axis.X => new float3(1, 0, 0),
+            Axis.Y => new float3(0, 1, 0),
+            Axis.Z => new float3(0, 0, 1),
+            _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
+        };
+    }
+
     public enum AxisDirection : byte {
         NegX,
         PosX,
@@ -44,5 +56,8 @@ namespace core {
         public static Axis axis(this AxisDirection direction) => (Axis)((byte)direction / 2);
         
         public static int3 offset(this int3 pos, AxisDirection direction, int value = 1) => pos + direction.int3(value);
+
+        public static bool isNeg(this AxisDirection direction) => ((byte)direction & 0b1) == 0;
+        public static bool isPos(this AxisDirection direction) => ((byte)direction & 0b1) != 0;
     }
 }

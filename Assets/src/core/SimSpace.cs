@@ -46,8 +46,6 @@ namespace core {
             // beam collision
             foreach (var beam in beams) {
                 if (!beam.beingConsumed) {
-                    print(beam.headPos);
-                    print(getDeviceAt(beam.headPos));
                     getDeviceAt(beam.headPos)?.onBeamHit(beam);
                     if (GridUtils.isGridEdge(beam.headPos)) {
                         getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHitEdge(beam);
@@ -57,9 +55,7 @@ namespace core {
             
             // tick devices
             foreach (var device in devices) {
-                if (device is ITickingDevice tickingDevice) {
-                    tickingDevice.tick();
-                }
+                device.postTick();
             }
             
             beams.AddRange(beamsStaging);

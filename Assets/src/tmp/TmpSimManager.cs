@@ -2,6 +2,7 @@
 using core;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace tmp {
     public class TmpSimManager : MonoBehaviour {
@@ -12,29 +13,27 @@ namespace tmp {
             simulator = transform.parent.GetComponent<Simulator>();
             simulator.rootSpace = transform.parent.GetComponentInChildren<SimSpace>();
         }
-
-        private int todoTicks = 0;
         
-        public void tick() {
-            todoTicks++;
-        }
-        
-        public void reset() {
-            simulator.reset();
-            todoTicks = 0;
-        }
+        private bool running = false;
 
         private void Update() {
             simulator.partialTick += math.min(Time.deltaTime * speed, 1f);
-            if (todoTicks > 0) {
+            if (running) {
                 if (simulator.partialTick >= 1f) {
                     simulator.partialTick -= 1f;
                     simulator.tick();
-                    todoTicks--;
+                    // todoTicks--;
                 }
             }
 
             simulator.partialTick = math.min(simulator.partialTick, 1f);
+        }
+
+        private void OnGUI() {
+            running = GUILayout.RepeatButton("Run");
+            if (GUILayout.Button("Reset")) {
+                simulator.reset();
+            }
         }
     }
 }

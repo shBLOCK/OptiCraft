@@ -4,7 +4,9 @@ using UnityEngine;
 
 namespace core {
     [RequireComponent(typeof(GridPosition))]
-    public sealed class LaserSource : Device, ITickingDevice {
+    public sealed class BeamSourceDevice : Device {
+        [SerializeField] private Texture2D image = null;
+        [SerializeField] private float4 color = 1f;
         [SerializeField] private AxisDirection direction = AxisDirection.PosZ;
 
         private Beam beam = null;
@@ -13,12 +15,18 @@ namespace core {
             beam = null;
         }
 
-        public void tick() {
+        public override void postTick() {
             if (beam == null) {
-                beam = new Beam.Laser(space, direction, gridPos.offset(direction), 10000).emit();
+                BeamImage beamImage;
+                if (!image) {
+                    beamImage = BeamImage.singlePixel(color);
+                } else {
+                    beamImage = new(BeamImageData.fromTexture2D(image), color);
+                }
+                beam = new Beam(space, direction, gridPos.offset(direction), beamImage).emit();
             }
         }
-        
+
         private void Update() {
             //TODO: tmp
             updateRendering();
