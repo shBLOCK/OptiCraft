@@ -61,5 +61,25 @@
                 return (MirrorDirection)((dir1byte << 3) | dir2byte);
             }
         }
+
+        public static MirrorDirection rotateStep(this MirrorDirection md, AxisDirection axis) {
+            var dir1 = md.dirA();
+            var dir2 = md.dirB();
+            if (dir1.axis() == axis.axis() || dir2.axis() == axis.axis()) {
+                dir1 = dir1.rotate(axis);
+                dir2 = dir2.rotate(axis);
+            } else {
+                if (dir1 == dir2) {
+                    dir2 = dir2.rotate(axis);
+                } else {
+                    if (dir1.rotate(axis) == dir2) {
+                        dir1 = dir2;
+                    } else {
+                        dir2 = dir1;
+                    }
+                }
+            }
+            return fromDirections(dir1, dir2);
+        }
     }
 }

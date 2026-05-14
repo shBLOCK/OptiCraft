@@ -172,6 +172,42 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DeviceRotateCW"",
+                    ""type"": ""Button"",
+                    ""id"": ""9ab5f6a9-ad36-467a-98e8-16de16d96ba9"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DeviceRotateCCW"",
+                    ""type"": ""Button"",
+                    ""id"": ""45612d55-5665-4eb0-8692-1f799d8b0510"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DeviceGrab"",
+                    ""type"": ""Button"",
+                    ""id"": ""0d90f096-a1ef-4442-989d-99fdc0f15b24"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""DeviceDelete"",
+                    ""type"": ""Button"",
+                    ""id"": ""a81848b7-73fa-4d52-9878-48b497ccac1d"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -557,6 +593,50 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": ""Keyboard&Mouse"",
                     ""action"": ""Crouch"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b6ae7280-e005-4d58-90a6-673c04d094cc"",
+                    ""path"": ""<Keyboard>/e"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DeviceRotateCW"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d080a5cb-65d6-4838-b864-5abebe8feec2"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DeviceRotateCCW"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""63cca099-3489-4a2d-b012-a65ba571e5a8"",
+                    ""path"": ""<Keyboard>/g"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DeviceGrab"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""782c854a-3ab4-4d00-bc7c-83aff42b27ca"",
+                    ""path"": ""<Keyboard>/delete"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""DeviceDelete"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1153,6 +1233,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         m_Player_Previous = m_Player.FindAction("Previous", throwIfNotFound: true);
         m_Player_Next = m_Player.FindAction("Next", throwIfNotFound: true);
         m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
+        m_Player_DeviceRotateCW = m_Player.FindAction("DeviceRotateCW", throwIfNotFound: true);
+        m_Player_DeviceRotateCCW = m_Player.FindAction("DeviceRotateCCW", throwIfNotFound: true);
+        m_Player_DeviceGrab = m_Player.FindAction("DeviceGrab", throwIfNotFound: true);
+        m_Player_DeviceDelete = m_Player.FindAction("DeviceDelete", throwIfNotFound: true);
         // UI
         m_UI = asset.FindActionMap("UI", throwIfNotFound: true);
         m_UI_Navigate = m_UI.FindAction("Navigate", throwIfNotFound: true);
@@ -1255,6 +1339,10 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Player_Previous;
     private readonly InputAction m_Player_Next;
     private readonly InputAction m_Player_Sprint;
+    private readonly InputAction m_Player_DeviceRotateCW;
+    private readonly InputAction m_Player_DeviceRotateCCW;
+    private readonly InputAction m_Player_DeviceGrab;
+    private readonly InputAction m_Player_DeviceDelete;
     /// <summary>
     /// Provides access to input actions defined in input action map "Player".
     /// </summary>
@@ -1302,6 +1390,22 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Player/Sprint".
         /// </summary>
         public InputAction @Sprint => m_Wrapper.m_Player_Sprint;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DeviceRotateCW".
+        /// </summary>
+        public InputAction @DeviceRotateCW => m_Wrapper.m_Player_DeviceRotateCW;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DeviceRotateCCW".
+        /// </summary>
+        public InputAction @DeviceRotateCCW => m_Wrapper.m_Player_DeviceRotateCCW;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DeviceGrab".
+        /// </summary>
+        public InputAction @DeviceGrab => m_Wrapper.m_Player_DeviceGrab;
+        /// <summary>
+        /// Provides access to the underlying input action "Player/DeviceDelete".
+        /// </summary>
+        public InputAction @DeviceDelete => m_Wrapper.m_Player_DeviceDelete;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1355,6 +1459,18 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Sprint.started += instance.OnSprint;
             @Sprint.performed += instance.OnSprint;
             @Sprint.canceled += instance.OnSprint;
+            @DeviceRotateCW.started += instance.OnDeviceRotateCW;
+            @DeviceRotateCW.performed += instance.OnDeviceRotateCW;
+            @DeviceRotateCW.canceled += instance.OnDeviceRotateCW;
+            @DeviceRotateCCW.started += instance.OnDeviceRotateCCW;
+            @DeviceRotateCCW.performed += instance.OnDeviceRotateCCW;
+            @DeviceRotateCCW.canceled += instance.OnDeviceRotateCCW;
+            @DeviceGrab.started += instance.OnDeviceGrab;
+            @DeviceGrab.performed += instance.OnDeviceGrab;
+            @DeviceGrab.canceled += instance.OnDeviceGrab;
+            @DeviceDelete.started += instance.OnDeviceDelete;
+            @DeviceDelete.performed += instance.OnDeviceDelete;
+            @DeviceDelete.canceled += instance.OnDeviceDelete;
         }
 
         /// <summary>
@@ -1393,6 +1509,18 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
             @Sprint.started -= instance.OnSprint;
             @Sprint.performed -= instance.OnSprint;
             @Sprint.canceled -= instance.OnSprint;
+            @DeviceRotateCW.started -= instance.OnDeviceRotateCW;
+            @DeviceRotateCW.performed -= instance.OnDeviceRotateCW;
+            @DeviceRotateCW.canceled -= instance.OnDeviceRotateCW;
+            @DeviceRotateCCW.started -= instance.OnDeviceRotateCCW;
+            @DeviceRotateCCW.performed -= instance.OnDeviceRotateCCW;
+            @DeviceRotateCCW.canceled -= instance.OnDeviceRotateCCW;
+            @DeviceGrab.started -= instance.OnDeviceGrab;
+            @DeviceGrab.performed -= instance.OnDeviceGrab;
+            @DeviceGrab.canceled -= instance.OnDeviceGrab;
+            @DeviceDelete.started -= instance.OnDeviceDelete;
+            @DeviceDelete.performed -= instance.OnDeviceDelete;
+            @DeviceDelete.canceled -= instance.OnDeviceDelete;
         }
 
         /// <summary>
@@ -1756,6 +1884,34 @@ public partial class @InputSystem_Actions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSprint(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DeviceRotateCW" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDeviceRotateCW(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DeviceRotateCCW" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDeviceRotateCCW(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DeviceGrab" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDeviceGrab(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "DeviceDelete" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnDeviceDelete(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "UI" which allows adding and removing callbacks.

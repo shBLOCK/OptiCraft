@@ -15,8 +15,8 @@ namespace device {
         }
 
         public override void onRemoved() {
-            base.onRemoved();
             unoccupy(gridPos);
+            base.onRemoved();
         }
 
         public override Bounds getVisualBox() => new(new float3(gridPos), new float3(1.5f));
@@ -33,6 +33,11 @@ namespace device {
         }
 
         public override void render(CommandBuffer cmds) {
+            new Bounds(new float3(gridPos), new float3(1.5f)).debugDraw(Color.darkMagenta);
+        }
+        
+        public void _tmp_setGridPos(int3 pos) {
+            gridPos = pos;
         }
     }
 }

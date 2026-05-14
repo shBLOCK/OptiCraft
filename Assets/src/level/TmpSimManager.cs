@@ -1,17 +1,14 @@
-﻿using System;
-using core;
+﻿using core;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.UI;
 
-namespace tmp {
+namespace level {
     public class TmpSimManager : MonoBehaviour {
         public float speed = 10f;
         private Simulator simulator;
         
         private void Awake() {
-            simulator = transform.parent.GetComponent<Simulator>();
-            simulator.rootSpace = transform.parent.GetComponentInChildren<SimSpace>();
+            simulator = GetComponent<Simulator>();
         }
         
         private bool running = false;
@@ -29,7 +26,7 @@ namespace tmp {
             simulator.partialTick = math.min(simulator.partialTick, 1f);
         }
 
-        private void OnGUI() {
+        public void _OnGUI() {
             running = GUILayout.RepeatButton("Run");
             if (GUILayout.Button("Reset")) {
                 simulator.reset();

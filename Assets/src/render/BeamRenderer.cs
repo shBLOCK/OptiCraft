@@ -1,5 +1,4 @@
-﻿using System;
-using core;
+﻿using core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -7,23 +6,30 @@ using utils;
 
 namespace render {
     public class BeamRenderer : MonoBehaviour {
-        private static readonly Material MATERIAL = Resources.Load<Material>("src/render/Beam.mat");
+        private static Material MATERIAL;
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void LOAD_RES() {
+            MATERIAL = Resources.Load<Material>("Beam");
+        }
+
         private Simulator simulator;
-        private CommandBuffer cmds = new();
+        private CommandBuffer cmds;
         private InputSystem_Actions inputActions;
 
         private void Awake() {
             simulator = GetComponent<Simulator>();
             inputActions = new();
             inputActions.Enable();
+            cmds = new CommandBuffer();
         }
 
         private Beam? hoveringBeam;
-        
+
         private void LateUpdate() {
             var mouseRay = Camera.main.ScreenPointToRay(inputActions.UI.Point.ReadValue<Vector2>());
             hoveringBeam = null;
-            
+
             foreach (var beam in simulator.rootSpace.enumerateBeams()) {
                 var xy = beam.direction.axis().orthoAxes();
                 float3 tailPos = beam.tailPos;
@@ -36,7 +42,7 @@ namespace render {
                 if (beam.beingEmitted) lengthDelta += 1f;
                 if (beam.beingConsumed) lengthDelta -= 1f;
                 length -= lengthDelta * (1f - simulator.partialTick);
-                
+
                 {
                     var bounds = new Bounds(
                         tailPos + beam.direction.float3(length),
@@ -46,7 +52,7 @@ namespace render {
                         hoveringBeam = beam;
                     }
                 }
-                
+
                 var matrix = new Matrix4x4(
                     new float4(xy.Item1.float3(), 0f),
                     new float4(xy.Item2.float3(), 0f),
@@ -56,14 +62,15 @@ namespace render {
                 var matProps = new MaterialPropertyBlock();
                 matProps.SetTexture("_BaseMap", beam.image.getTexture(simulator.beamImageDataManager));
                 matProps.SetColor("_BaseColor", (Vector4)beam.image.modulation);
-                cmds.DrawMesh(MESH, matrix, MATERIAL, 0, -1, matProps);
+                Graphics.RenderMesh(new RenderParams(MATERIAL) { matProps = matProps }, MESH, 0, matrix);
+                // cmds.DrawMesh(MESH, matrix, MATERIAL, 0, -1, matProps);
             }
 
-            Graphics.ExecuteCommandBuffer(cmds);
-            cmds.Clear();
+            // Graphics.ExecuteCommandBuffer(cmds);
+            // cmds.Clear();
         }
-        
-        private void OnGUI() {
+
+        public void _OnGUI() {
             if (Event.current.type == EventType.Repaint) {
                 if (hoveringBeam != null) {
                     // GUILayout.Label("Bea");

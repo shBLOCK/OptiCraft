@@ -41,7 +41,7 @@ namespace core {
         public bool isValid => id != INVALID_ID;
         internal void _invalidate() => id = INVALID_ID;
 
-        internal void _emit(SimSpace space) {
+        internal void _emit() {
             Assert.IsFalse(beingEmitted, "Beam already being emitted");
             flags |= BeamFlags.BeingEmitted;
         }
@@ -150,7 +150,7 @@ namespace core {
 
             public BeamImageData get(ushort id) => instances[id];
 
-            private BeamImageData addNew(int2 size) {
+            public BeamImageData addNew(int2 size) {
                 BeamImageData data;
                 if (freeSlots.TryPop(out var slot)) {
                     instances[slot] = data = new BeamImageData(slot, size);
@@ -190,7 +190,7 @@ namespace core {
         // public readonly byte2 scale;
         // public readonly int2 offset;
 
-        private BeamImage(ushort dataId, float4 modulation, float4 bias) {
+        public BeamImage(ushort dataId, float4 modulation, float4 bias) {
             this.dataId = dataId;
             this.modulation = modulation;
             this.bias = bias;

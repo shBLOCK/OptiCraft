@@ -5,6 +5,7 @@ using device;
 using JetBrains.Annotations;
 using Unity.Collections;
 using Unity.Mathematics;
+using UnityEngine;
 using UnityEngine.Assertions;
 using utils;
 
@@ -47,6 +48,7 @@ namespace core {
                 if (!beam.isValid) continue;
                 if (!beam.beingConsumed) {
                     getDeviceAt(beam.headPos)?.onBeamHit(ref beam);
+                    Debug.Log($"{beam.headPos}: {getDeviceAt(beam.headPos)}");
                     if (GridUtils.isGridEdge(beam.headPos)) {
                         getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHitEdge(ref beam);
                     }
@@ -59,15 +61,8 @@ namespace core {
             }
 
             // emit staged beams
-            foreach (var _beam in beamsStaging) {
-                var beam = _beam;
-                if (beamsFreeSlots.TryPop(out var slot)) {
-                    beam.id = slot;
-                    beams[slot] = beam;
-                } else {
-                    beam.id = (ushort)beams.Length;
-                    beams.Add(beam);
-                }
+            foreach (var beam in beamsStaging) {
+                beams.Add(beam);
             }
 
             beamsStaging.Clear();
@@ -110,6 +105,7 @@ namespace core {
         }
 
         public Beam emitBeam(Beam beam) {
+            beam._emit();
             if (beamsFreeSlots.TryPop(out var slot)) {
                 beam.id = slot;
                 beams[slot] = beam;
@@ -123,16 +119,15 @@ namespace core {
         }
 
         public void stopEmitBeam(ushort id) {
-            beams[id]._stopEmit();
+            beams.ElementAt(id)._stopEmit();
         }
 
         public void consumeBeam(ushort id) {
-            beams[id]._consume();
-            Assert.IsTrue(beams[id].beingConsumed);
+            beams.ElementAt(id)._consume();
         }
 
         public void stopConsumeBeam(ushort id) {
-            beams[id]._stopConsume();
+            beams.ElementAt(id)._stopConsume();
         }
 
         public void reset() {

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System;
+using System.Text.Json.Nodes;
 using UnityEngine;
 
 namespace core {
@@ -9,6 +10,10 @@ namespace core {
         public readonly BeamImageData.BeamImageDataManager beamImageDataManager = new();
         
         public SimSpace rootSpace;
+
+        private void Awake() {
+            rootSpace = new SimSpace(this);
+        }
 
         public void tick() {
             rootSpace.tick();

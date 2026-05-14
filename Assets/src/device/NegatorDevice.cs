@@ -29,7 +29,6 @@ namespace device {
         }
 
         public override void onRemoved() {
-            base.onRemoved();
             for (byte i = 0; i < 6; i++) {
                 var pair = beams[(AxisDirection)i];
                 if (pair != BeamIOPair.INVALID) {
@@ -38,6 +37,12 @@ namespace device {
                     space.stopEmitBeam(pair.output);
                 }
             }
+            base.onRemoved();
+        }
+
+        public override void reset() {
+            base.reset();
+            beams.fill(BeamIOPair.INVALID);
         }
 
         private static readonly OCDeviceType<NegatorDevice> _TYPE = new("negator");

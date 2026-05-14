@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using core;
+using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.Rendering;
 using utils;
 
 namespace device {
     public abstract class MirrorLikeDevice : SimpleGridDevice {
-        protected MirrorDirection mirrorDir;
+        protected MirrorDirection mirrorDir = MirrorDirection.PosXNegZ;
 
         public override void onBeamHitEdge(ref Beam beam) {
             if (beam.direction.axis() != mirrorDir.dirA().axis() && beam.direction.axis() != mirrorDir.dirB().axis()) {
@@ -22,6 +25,20 @@ namespace device {
         protected override void loadData(JsonObject data) {
             base.loadData(data);
             mirrorDir = Enum.Parse<MirrorDirection>(data["mirrorDir"].GetValue<string>());
+        }
+
+        public override void render(CommandBuffer cmds) {
+            base.render(cmds);
+            float3 pos = gridPos;
+            new Bounds(pos + mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.red);
+            new Bounds(pos + mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.green);
+            new Bounds(pos - mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.darkRed);
+            new Bounds(pos - mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.darkGreen);
+        }
+
+        public override void userActionRotate(AxisDirection axis) {
+            base.userActionRotate(axis);
+            mirrorDir = mirrorDir.rotateStep(axis);
         }
     }
 }

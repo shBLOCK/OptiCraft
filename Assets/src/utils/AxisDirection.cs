@@ -28,6 +28,21 @@ namespace utils {
             Axis.Z => (Axis.X, Axis.Y),
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
+
+        public static Axis orthoAxes(this (Axis, Axis) axes) => axes switch {
+            (Axis.X, Axis.Y) => Axis.Z,
+            (Axis.Y, Axis.X) => Axis.Z,
+            (Axis.X, Axis.Z) => Axis.Y,
+            (Axis.Z, Axis.X) => Axis.Y,
+            (Axis.Y, Axis.Z) => Axis.X,
+            (Axis.Z, Axis.Y) => Axis.X,
+            _ => throw new ArgumentOutOfRangeException(nameof(axes), axes, null)
+        };
+
+        public static Axis rotate(this Axis self, Axis axis) {
+            if (self == axis) return self;
+            return orthoAxes((self, axis));
+        }
     }
 
     public enum AxisDirection : byte {
@@ -81,10 +96,8 @@ namespace utils {
         };
         //@formatter:on
 
-        public static AxisDirection ccw(this AxisDirection self, AxisDirection axis) =>
+        public static AxisDirection rotate(this AxisDirection self, AxisDirection axis) =>
             ROTATION_LUT[(byte)axis, (byte)self];
-
-        public static AxisDirection cw(this AxisDirection self, AxisDirection axis) => self.ccw(axis.opposite());
     }
 
     public class AxisDirectionMap<T> {

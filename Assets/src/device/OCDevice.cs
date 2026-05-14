@@ -5,23 +5,24 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
 using UnityEngine.Rendering;
+using utils;
 
 namespace device {
     public abstract class OCDevice {
         public SimSpace space { get; private set; }
 
         public virtual void onAdded(SimSpace simSpace) {
+            Assert.IsNull(space, "Device already added to space");
             space = simSpace;
         }
 
         public virtual void onRemoved() {
+            Assert.IsNotNull(space, "Device not added to space");
             space = null;
         }
 
         protected void occupy(int3 gridPos) => space._deviceOccupy(this, gridPos);
         protected void unoccupy(int3 gridPos) => space._deviceUnoccupy(this, gridPos);
-
-        public abstract Bounds getVisualBox();
 
         public virtual void reset() { }
         public virtual void tick() { }
@@ -32,6 +33,12 @@ namespace device {
         public virtual void onBeamEndEdge(ref Beam beam) { }
 
         public virtual void render(CommandBuffer cmds) { }
+
+        public abstract Bounds getVisualBox();
+
+        public virtual void userActionRotate(AxisDirection axis) {
+            Assert.IsTrue(space == null);
+        }
 
         protected virtual JsonObject saveData() => new();
         protected virtual void loadData(JsonObject data) { }
