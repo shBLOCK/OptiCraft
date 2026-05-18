@@ -23,6 +23,8 @@ namespace level {
         private AxisDirection hoveredDeviceNormal;
         private OCDevice grabbedDevice = null;
 
+        private string[] _tmp_beamSourceColor = CollectionUtils.newFilledArray<string>(6, "0");
+
         public void _OnGUI() {
             if (grabbedDevice == null) {
                 foreach (var deviceType in OCDevice.TYPES) {
@@ -33,14 +35,30 @@ namespace level {
 
                 if (GUILayout.Button("BeamSourceXG")) {
                     grabbedDevice = new BeamSourceDevice() {
-                        image = Resources.Load<Texture2D>("x_gradient")
+                        imagePath = "x_gradient"
                     };
                 }
                 if (GUILayout.Button("BeamSourceYG")) {
                     grabbedDevice = new BeamSourceDevice() {
-                        image = Resources.Load<Texture2D>("y_gradient")
+                        imagePath = "y_gradient"
                     };
                 }
+
+                GUILayout.BeginHorizontal();
+                for (int i = 0; i < 4; i++) {
+                    _tmp_beamSourceColor[i] = GUILayout.TextField(_tmp_beamSourceColor[i]);
+                }
+
+                if (GUILayout.Button("BeamSrc")) {
+                    float4 color = 0f;
+                    for (int i = 0; i < 4; i++) {
+                        color[i] = float.Parse(_tmp_beamSourceColor[i]);
+                    }
+                    grabbedDevice = new BeamSourceDevice() {
+                        color = color
+                    };
+                }
+                GUILayout.EndHorizontal();
             }
         }
 

@@ -115,7 +115,8 @@ namespace core {
         // private float4[,] data;
         // private NativeArray<float4> nativeData = default;
 
-        private BeamImageData(ushort id, uint2 size) {
+        private BeamImageData(BeamImageDataManager manager, ushort id, uint2 size) {
+            this.manager = manager;
             this.id = id;
             this.size = size;
         }
@@ -163,9 +164,13 @@ namespace core {
         public void decRef() {
             refCount--;
             if (refCount == 0) {
-                if (renderTexture) renderTexture.Release();
                 manager._free(this);
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void free() {
+            if (renderTexture) renderTexture.Release();
         }
 
         public sealed class BeamImageDataManager {
@@ -178,9 +183,9 @@ namespace core {
             public BeamImageData addNew(uint2 size) {
                 BeamImageData data;
                 if (freeSlots.TryPop(out var slot)) {
-                    instances[slot] = data = new BeamImageData(slot, size);
+                    instances[slot] = data = new BeamImageData(this, slot, size);
                 } else {
-                    data = new BeamImageData((ushort)instances.Count, size);
+                    data = new BeamImageData(this, (ushort)instances.Count, size);
                     instances.Add(data);
                 }
 
@@ -188,8 +193,17 @@ namespace core {
             }
 
             internal void _free(BeamImageData instance) {
+                instance.free();
                 instances[instance.id] = null;
                 freeSlots.Push(instance.id);
+            }
+
+            internal void reset() {
+                instances.ForEach(it => {
+                    if (it != null) it.free();
+                });
+                instances.Clear();
+                freeSlots.Clear();
             }
         }
     }
@@ -328,7 +342,7 @@ namespace core {
                 cmds.SetComputeTextureParam(cs, kernel, uniform.textureId, SINGLE_PIXEL_RGBA_ONES_TEXTURE);
                 // TODO: actually set SHADER_UNIFORM_TRANSFORM
             }
-            
+
             cmds.SetComputeVectorParam(cs, uniform.transformPackedId, new float4(transform.c0, transform.c1));
             cmds.SetComputeVectorParam(cs, uniform.offsetId, new float4(transform.c2, 0f, 0f));
             cmds.SetComputeVectorParam(cs, uniform.modulationId, modulation);

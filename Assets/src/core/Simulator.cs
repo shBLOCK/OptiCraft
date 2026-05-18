@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -34,6 +33,7 @@ namespace core {
             tickNumber = 0;
             partialTick = 1f;
             rootSpace.reset();
+            beamImageDataManager.reset();
         }
 
         public JsonObject save() {
@@ -45,6 +45,7 @@ namespace core {
         }
 
         public void load(JsonObject data) {
+            reset();
             tickNumber = data["tickNumber"].GetValue<int>();
             partialTick = data["partialTick"].GetValue<float>();
             rootSpace = new SimSpace(this);

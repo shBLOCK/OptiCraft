@@ -1,0 +1,23 @@
+﻿#pragma kernel ChannelBroadcastMain;
+
+#include "Assets/assets/shader_include/compute_utils.hlsl"
+#include "Assets/assets/shader_include/beam_image.hlsl"
+
+DECLARE_BEAM_IMAGE(uInputImage);
+RWTexture2D<float4> uOutputImage;
+
+SamplerState PointClampSampler;
+
+[numthreads(16,16,1)]
+void ChannelBroadcastMain(uint3 id : SV_DispatchThreadID) {
+    float2 uv;
+    if (!dispatchIdToImageUV(id.xy, uOutputImage, uv)) return;
+    float4 input = sampleBeamImage(uInputImage, uv, PointClampSampler);
+    //TODO: better impl...
+    float value = 0.0;
+    if (input.x != 0.0) value = input.x;
+    if (input.y != 0.0) value = input.y;
+    if (input.z != 0.0) value = input.z;
+    if (input.w != 0.0) value = input.w;
+    uOutputImage[id.xy] = value;
+}

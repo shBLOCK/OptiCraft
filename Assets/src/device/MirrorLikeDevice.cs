@@ -35,8 +35,6 @@ namespace device {
         protected void _tmpDrawIO() {
             new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.red);
             new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.green);
-            new Bounds(gridPos - mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.darkRed);
-            new Bounds(gridPos - mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.darkGreen);
         }
 
         public override void userActionRotate(AxisDirection axis) {

@@ -6,6 +6,22 @@ using JetBrains.Annotations;
 using Unity.Mathematics;
 
 namespace utils {
+    public enum Sign : byte {
+        Neg,
+        Pos
+    }
+
+    public static class SignExtensions {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Sign opposite(this Sign sign) => (Sign)((~(byte)sign) & 0b1);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float floatValue(this Sign sign) => sign == Sign.Neg ? -1f : 1f;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int intValue(this Sign sign) => sign == Sign.Neg ? -1 : 1;
+    }
+
     public enum Axis : byte {
         X,
         Y,
@@ -14,10 +30,8 @@ namespace utils {
 
     public static class AxisExtensions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AxisDirection negDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 0);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static AxisDirection posDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 1);
+        public static AxisDirection withSign(this Axis axis, Sign sign) =>
+            (AxisDirection)(((byte)axis << 1) | (byte)sign);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 float3(this Axis axis, float length = 1f) => axis switch {
@@ -96,19 +110,16 @@ namespace utils {
         public static int3 offset(this int3 pos, AxisDirection direction, int value = 1) => pos + direction.int3(value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool isNeg(this AxisDirection direction) => ((byte)direction & 0b1) == 0;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool isPos(this AxisDirection direction) => ((byte)direction & 0b1) != 0;
+        public static Sign sign(this AxisDirection direction) => (Sign)((byte)direction & 0b1);
 
         //@formatter:off
         private static AxisDirection[] ROTATION_LUT = new AxisDirection[6 * 6] {
-            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY,
             AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.PosY, AxisDirection.NegY,
-            AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX,
+            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY,
             AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.NegX, AxisDirection.PosX,
-            AxisDirection.PosY, AxisDirection.NegY, AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ,
+            AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX,
             AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX, AxisDirection.NegZ, AxisDirection.PosZ,
+            AxisDirection.PosY, AxisDirection.NegY, AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ,
         };
         //@formatter:on
 

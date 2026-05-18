@@ -56,7 +56,7 @@ namespace render {
                 var matrix = new Matrix4x4(
                     new float4(xy.Item1.float3(), 0f),
                     new float4(xy.Item2.float3(), 0f),
-                    new float4(beam.direction.float3(length), 0f),
+                    new float4(beam.direction.float3(length - 0.2f), 0f),
                     new float4(tailPos, 1f)
                 );
                 var matProps = new MaterialPropertyBlock();
@@ -73,14 +73,13 @@ namespace render {
         public void _OnGUI() {
             if (Event.current.type == EventType.Repaint) {
                 if (hoveringBeam != null) {
-                    // GUILayout.Label("Bea");
                     GUI.DrawTexture(
                         new Rect(Screen.width - 10 - 256, 10, 256, 256),
                         hoveringBeam.Value.image.getTexture(simulator.beamImageDataManager),
                         ScaleMode.ScaleToFit,
                         false,
                         0,
-                        (Vector4)hoveringBeam.Value.image.modulation,
+                        (Vector4)(new float4(hoveringBeam.Value.image.modulation.xyz, 1f)),
                         Vector4.zero,
                         0
                     );

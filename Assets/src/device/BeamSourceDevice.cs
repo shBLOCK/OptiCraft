@@ -1,4 +1,6 @@
-﻿using core;
+﻿using System;
+using System.Text.Json.Nodes;
+using core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -6,9 +8,10 @@ using utils;
 
 namespace device {
     public sealed class BeamSourceDevice : SimpleGridDevice {
+        private AxisDirection direction = AxisDirection.PosZ;
+        public string imagePath = null;
         public Texture2D image = null;
         public float4 color = 1f;
-        private AxisDirection direction = AxisDirection.PosZ;
 
         private ushort beam = Beam.INVALID_ID;
 
@@ -19,6 +22,9 @@ namespace device {
         public override void tick() {
             if (beam == Beam.INVALID_ID) {
                 BeamImage beamImage;
+                if (imagePath != null && !image) {
+                    image = Resources.Load<Texture2D>(imagePath); //TODO: tmp
+                }
                 if (!image) {
                     beamImage = BeamImage.singlePixel(color);
                 } else {
@@ -38,6 +44,20 @@ namespace device {
             }
 
             base.onRemoved();
+        }
+
+        protected override JsonObject saveData() {
+            var data = base.saveData();
+            data["direction"] = direction.ToString();
+            data["color"] = color.toJsonArray();
+            data["imagePath"] = imagePath;
+            return data;
+        }
+        protected override void loadData(JsonObject data) {
+            base.loadData(data);
+            direction = Enum.Parse<AxisDirection>(data["direction"].ToString());
+            color = data["color"].AsArray().toFloat4();
+            imagePath = data["imagePath"]?.GetValue<string>();
         }
 
         private static Mesh MESH;

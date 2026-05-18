@@ -1,5 +1,4 @@
-﻿using System;
-using core;
+﻿using core;
 using Unity.Mathematics;
 using UnityEngine;
 using utils;
@@ -16,18 +15,18 @@ namespace device {
             public bool frontDirty;
             public bool backDirty;
 
-            public State(ushort value) {
-                frontInput = value;
+            public State(byte dummy) {
+                frontInput = Beam.INVALID_ID;
                 oldFrontInputImage = BeamImage.DUMMY;
-                backInput = value;
+                backInput = Beam.INVALID_ID;
                 oldBackInputImage = BeamImage.DUMMY;
-                frontOutput = value;
-                backOutput = value;
+                frontOutput = Beam.INVALID_ID;
+                backOutput = Beam.INVALID_ID;
                 frontDirty = backDirty = false;
             }
         }
 
-        private readonly State[] stateOnFrontInputAxis = CollectionUtils.newFilledArray(3, new State(Beam.INVALID_ID));
+        private ByteEnumMap<Axis, State> stateOnFrontInputAxis = new(3, new State(0));
 
         private bool dirty = false;
 
@@ -43,7 +42,7 @@ namespace device {
         private void updateInputBeam(AxisDirection dir, ushort beamId, in BeamImage beamImage) {
             if (mirrorDir.reflect(dir, out var reflectDir, out var isFrontSide)) {
                 var frontDir = isFrontSide ? dir : reflectDir.opposite();
-                ref var state = ref stateOnFrontInputAxis[(byte)frontDir.axis()];
+                ref var state = ref stateOnFrontInputAxis[frontDir.axis()];
                 dirty = true;
                 if (isFrontSide) {
                     state.frontDirty = !state.oldFrontInputImage.isEqualConservative(beamImage);
@@ -70,9 +69,9 @@ namespace device {
         public override void tick() {
             if (dirty) {
                 dirty = false;
-                for (int i = 0; i < 3; i++) {
+                for (byte i = 0; i < 3; i++) {
                     var axis = (Axis)i;
-                    ref var state = ref stateOnFrontInputAxis[(byte)axis];
+                    ref var state = ref stateOnFrontInputAxis[axis];
                     if (state.frontDirty || state.backDirty) {
                         state.frontDirty = state.backDirty = false;
 
@@ -87,7 +86,8 @@ namespace device {
                             ref var frontBeam = ref space.getBeam(state.frontInput);
                             ref var backBeam = ref space.getBeam(state.backInput);
                             if (frontBeam.image.isSinglePixel && backBeam.image.isSinglePixel) {
-                                outputImage = BeamImage.singlePixel(frontBeam.image.modulation + backBeam.image.modulation);
+                                outputImage =
+                                    BeamImage.singlePixel(frontBeam.image.modulation + backBeam.image.modulation);
                             } else {
                                 var size = math.max(frontBeam.image.size, backBeam.image.size);
                                 outputImage = new BeamImage(
@@ -138,12 +138,12 @@ namespace device {
         }
 
         public override void reset() {
-            Array.Fill(stateOnFrontInputAxis, new State(Beam.INVALID_ID));
+            stateOnFrontInputAxis.fill(new State(0));
         }
 
         public override void onRemoved() {
-            for (int i = 0; i < 3; i++) {
-                ref var state = ref stateOnFrontInputAxis[i];
+            for (byte i = 0; i < 3; i++) {
+                ref var state = ref stateOnFrontInputAxis[(Axis)i];
                 if (state.frontInput != Beam.INVALID_ID) space.stopConsumeBeam(state.frontInput);
                 if (state.backInput != Beam.INVALID_ID) space.stopConsumeBeam(state.backInput);
                 if (state.frontOutput != Beam.INVALID_ID) space.stopEmitBeam(state.frontOutput);
@@ -151,7 +151,8 @@ namespace device {
                 state.oldFrontInputImage.decRef(space.simulator.beamImageDataManager);
                 state.oldBackInputImage.decRef(space.simulator.beamImageDataManager);
             }
-            Array.Fill(stateOnFrontInputAxis, new State(Beam.INVALID_ID));
+
+            stateOnFrontInputAxis.fill(new State(0));
 
             base.onRemoved();
         }

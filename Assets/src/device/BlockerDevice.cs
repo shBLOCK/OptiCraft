@@ -1,0 +1,37 @@
+﻿using core;
+using UnityEngine;
+using utils;
+
+namespace device {
+    public class BlockerDevice : SimpleGridDevice {
+        private ByteEnumMap<AxisDirection, ushort> consumingBeams = new(6, Beam.INVALID_ID);
+
+        public override void onBeamHit(ref Beam beam) {
+            space.consumeBeam(ref beam);
+            consumingBeams[beam.direction] = beam.id;
+        }
+
+        public override void onBeamEnd(ref Beam beam) {
+            consumingBeams[beam.direction] = Beam.INVALID_ID;
+        }
+
+        public override void reset() {
+            consumingBeams.fill(Beam.INVALID_ID);
+        }
+
+        public override void onRemoved() {
+            for (byte i = 0; i < 6; i++) {
+                var id = consumingBeams[(AxisDirection)i];
+                if (id != Beam.INVALID_ID) space.stopConsumeBeam(id);
+            }
+            reset();
+            base.onRemoved();
+        }
+
+        private static readonly OCDeviceType<BlockerDevice> _TYPE = new("blocker");
+        public override OCDeviceType TYPE => _TYPE;
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void REGISTER() => register(_TYPE);
+    }
+}

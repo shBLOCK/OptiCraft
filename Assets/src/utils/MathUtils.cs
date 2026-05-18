@@ -2,7 +2,6 @@
 using System.Text.Json.Nodes;
 using Unity.Mathematics;
 using UnityEngine;
-using Vertx.Debugging;
 
 namespace utils {
     public static class MathUtils {
@@ -17,6 +16,12 @@ namespace utils {
 
         public static int3 toInt3(this JsonArray data) =>
             new(data[0].GetValue<int>(), data[1].GetValue<int>(), data[2].GetValue<int>());
+
+        public static JsonArray toJsonArray(this float4 value) => new() { value.x, value.y, value.z, value.w };
+
+        public static float4 toFloat4(this JsonArray data) =>
+            new(data[0].GetValue<float>(), data[1].GetValue<float>(),
+                data[2].GetValue<float>(), data[3].GetValue<float>());
 
         public static bool intersectRay(this Bounds bounds, Ray ray, out AxisDirection normal) {
             if (bounds.IntersectRay(ray, out float distance)) {
@@ -51,7 +56,7 @@ namespace utils {
             var p6 = new Vector3(bounds.max.x, bounds.max.y, bounds.min.z);
             var p7 = new Vector3(bounds.max.x, bounds.max.y, bounds.max.z);
             var p8 = new Vector3(bounds.min.x, bounds.max.y, bounds.max.z);
-            
+
             Debug.DrawLine(p1, p2, color, duration, depthTest);
             Debug.DrawLine(p2, p3, color, duration, depthTest);
             Debug.DrawLine(p3, p4, color, duration, depthTest);

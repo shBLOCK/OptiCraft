@@ -33,10 +33,11 @@ def gen_MirrorDirection():
 def gen_AxisDirection_rotation():
     vec_to_dir = {dir.vec: dir for dir in Dir}
     for axis in Dir:
-        print("{", end="")
+        # print("{", end="")
         for dir in Dir:
-            rotated = vec_to_dir[Vec3i(Transform3D.rotating(Vec3(axis.vec), pi / 2) * Vec3(dir.vec))]
+            rotated = vec_to_dir[Vec3i(Transform3D.rotating(Vec3(axis.vec), -pi / 2) * Vec3(dir.vec))]
             print(f"AxisDirection.{rotated.name},", end="")
-        print("},")
+        # print("},")
+        print()
 
 gen_AxisDirection_rotation()

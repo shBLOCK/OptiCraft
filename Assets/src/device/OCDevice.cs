@@ -61,7 +61,7 @@ namespace device {
             public override OCDevice construct() => new T();
         }
 
-        private static Dictionary<string, OCDeviceType> REGISTRY = new();
+        private static readonly Dictionary<string, OCDeviceType> REGISTRY = new();
 
         public static void register(OCDeviceType type) {
             Assert.IsFalse(REGISTRY.ContainsKey(type.id));
@@ -71,9 +71,10 @@ namespace device {
         public static IEnumerable<OCDeviceType> TYPES => REGISTRY.Values;
 
         public JsonObject save() {
-            var data = new JsonObject();
-            data["type"] = TYPE.id;
-            data["data"] = saveData();
+            var data = new JsonObject {
+                ["type"] = TYPE.id,
+                ["data"] = saveData()
+            };
             return data;
         }
 

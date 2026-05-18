@@ -1,4 +1,4 @@
-﻿#pragma kernel SinCos;
+﻿#pragma kernel SinCosMain;
 
 #include "Assets/assets/shader_include/compute_utils.hlsl"
 #include "Assets/assets/shader_include/beam_image.hlsl"
@@ -10,7 +10,7 @@ RWTexture2D<float4> uCosOutputImage;
 SamplerState PointClampSampler;
 
 [numthreads(16,16,1)]
-void SinCos(uint3 id : SV_DispatchThreadID) {
+void SinCosMain(uint3 id : SV_DispatchThreadID) {
     float2 uv;
     if (!dispatchIdToImageUV(id.xy, uSinOutputImage, uv)) return;
     float4 input = sampleBeamImage(uInputImage, uv, PointClampSampler);

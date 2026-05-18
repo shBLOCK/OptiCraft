@@ -8,16 +8,43 @@ using utils;
 using Vertx.Debugging;
 
 namespace device {
-    public class NegatorDevice : SimpleGridDevice {
+    public class ChannelBroadcastDevice : SimpleGridDevice {
         private Axis axis;
         private ByteEnumMap<Sign, BeamIOPair> beams = new(2, BeamIOPair.INVALID_IDS);
+        
+        private static ComputeShader CS;
+        private static int CSK;
+        private static BeamImageShaderUniform uInputImage;
+        private static int uOutputImage;
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void LOAD_CS() {
+            CS = Resources.Load<ComputeShader>("device/channel_broadcast");
+            CSK = CS.FindKernel("ChannelBroadcastMain");
+            uInputImage = new BeamImageShaderUniform("uInputImage");
+            uOutputImage = Shader.PropertyToID("uOutputImage");
+        }
 
         public override void onBeamHit(ref Beam beam) {
             space.consumeBeam(ref beam);
             if (beam.direction.axis() == axis) {
+                BeamImage outputImage;
+                if (beam.image.isSinglePixel) {
+                    outputImage = BeamImage.singlePixel(math.cmax(beam.image.modulation));
+                } else {
+                    var bidm = space.simulator.beamImageDataManager;
+                    var size = beam.image.size;
+                    var imageData = bidm.addNew(size);
+                    outputImage = new BeamImage(imageData.id, size,
+                        BeamImage.Orientation.PosXPosY, 0, 1f, 0f);
+                    var cmds = space.simulator.cmds;
+                    beam.image.setToShader(bidm, cmds, CS, CSK, uInputImage);
+                    cmds.SetComputeTextureParam(CS, CSK, uOutputImage, imageData._tmp_getRT());
+                    cmds.dispatchCompute2D(CS, CSK, size);
+                }
                 beams[beam.direction.sign()] = new BeamIOPair(
                     beam.id,
-                    space.emitBeam(new Beam(gridPos, beam.direction, beam.image.modulated(-1f))).id
+                    space.emitBeam(new Beam(gridPos, beam.direction, outputImage)).id
                 );
             }
         }
@@ -67,10 +94,10 @@ namespace device {
 
         public override void render(CommandBuffer cmds) {
             base.render(cmds);
-            D.raw(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.black);
+            D.raw(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.white);
         }
 
-        private static readonly OCDeviceType<NegatorDevice> _TYPE = new("negator");
+        private static readonly OCDeviceType<ChannelBroadcastDevice> _TYPE = new("channel_broadcast");
         public override OCDeviceType TYPE => _TYPE;
 
         [RuntimeInitializeOnLoadMethod]

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace utils {
     public readonly struct BeamIOPair : IEquatable<BeamIOPair> {
-        public static BeamIOPair INVALID = new(ushort.MaxValue, ushort.MaxValue);
+        public static BeamIOPair INVALID_IDS = new(ushort.MaxValue, ushort.MaxValue);
 
         public readonly ushort input;
         public readonly ushort output;
