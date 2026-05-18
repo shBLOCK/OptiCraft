@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace core {
     public sealed class Simulator : MonoBehaviour {
@@ -8,15 +9,25 @@ namespace core {
         public float partialTick = 1f;
 
         public readonly BeamImageData.BeamImageDataManager beamImageDataManager = new();
-        
+        public CommandBuffer cmds;
+
         public SimSpace rootSpace;
 
         private void Awake() {
+            cmds = new CommandBuffer();
             rootSpace = new SimSpace(this);
         }
 
         public void tick() {
+            tickNumber++;
+            Debug.Log($"tick {tickNumber}");
+            
+            cmds.Clear();
             rootSpace.tick();
+            
+            //TODO: maybe manage this somewhere else
+            Graphics.ExecuteCommandBuffer(cmds);
+            cmds.Clear();
         }
 
         public void reset() {
@@ -32,7 +43,7 @@ namespace core {
             data["rootSpace"] = rootSpace.save();
             return data;
         }
-        
+
         public void load(JsonObject data) {
             tickNumber = data["tickNumber"].GetValue<int>();
             partialTick = data["partialTick"].GetValue<float>();

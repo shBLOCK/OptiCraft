@@ -1,0 +1,24 @@
+﻿#pragma kernel Modulator;
+
+#include "Assets/assets/shader_include/compute_utils.hlsl"
+#include "Assets/assets/shader_include/beam_image.hlsl"
+
+DECLARE_BEAM_IMAGE(uModulatingImage);
+DECLARE_BEAM_IMAGE(uModulatorAImage);
+DECLARE_BEAM_IMAGE(uModulatorBImage);
+bool uModulatorBActive;
+RWTexture2D<float4> uOutputImage;
+
+SamplerState PointClampSampler;
+
+[numthreads(16,16,1)]
+void Modulator(uint3 id : SV_DispatchThreadID) {
+    float2 uv;
+    if (!dispatchIdToImageUV(id.xy, uOutputImage, uv)) return;
+    float4 modulating = sampleBeamImage(uModulatingImage, uv, PointClampSampler);
+    float4 modulator = sampleBeamImage(uModulatorAImage, uv, PointClampSampler);
+    if (uModulatorBActive) {
+        modulator += sampleBeamImage(uModulatorBImage, uv, PointClampSampler);
+    }
+    uOutputImage[id.xy] = modulating * modulator;
+}

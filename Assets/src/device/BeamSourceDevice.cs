@@ -22,12 +22,12 @@ namespace device {
                 if (!image) {
                     beamImage = BeamImage.singlePixel(color);
                 } else {
-                    var data = space.simulator.beamImageDataManager.addNew(new int2(image.width, image.height));
+                    var data = space.simulator.beamImageDataManager.addNew((uint2)image.size());
                     data.blitFromTexture(image);
-                    beamImage = new(data.id, color, 0f);
+                    beamImage = new BeamImage(data.id, data.size, BeamImage.Orientation.PosXPosY, 0, color, 0f);
                 }
 
-                beam = space.emitBeam(new Beam(direction, gridPos.offset(direction), beamImage)).id;
+                beam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;
             }
         }
 
@@ -36,6 +36,7 @@ namespace device {
                 space.stopEmitBeam(beam);
                 beam = Beam.INVALID_ID;
             }
+
             base.onRemoved();
         }
 

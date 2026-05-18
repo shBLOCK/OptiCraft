@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Unity.Mathematics;
 
@@ -12,9 +13,13 @@ namespace utils {
     }
 
     public static class AxisExtensions {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection negDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 0);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection posDirection(this Axis axis) => (AxisDirection)(((byte)axis << 1) | 1);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 float3(this Axis axis, float length = 1f) => axis switch {
             Axis.X => new float3(length, 0, 0),
             Axis.Y => new float3(0, length, 0),
@@ -22,6 +27,7 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (Axis, Axis) orthoAxes(this Axis axis) => axis switch {
             Axis.X => (Axis.Y, Axis.Z),
             Axis.Y => (Axis.X, Axis.Z),
@@ -29,6 +35,7 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Axis orthoAxes(this (Axis, Axis) axes) => axes switch {
             (Axis.X, Axis.Y) => Axis.Z,
             (Axis.Y, Axis.X) => Axis.Z,
@@ -39,6 +46,7 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(axes), axes, null)
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Axis rotate(this Axis self, Axis axis) {
             if (self == axis) return self;
             return orthoAxes((self, axis));
@@ -55,6 +63,7 @@ namespace utils {
     }
 
     public static class AxisDirectionExtensions {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float3 float3(this AxisDirection direction, float length = 1f) => direction switch {
             AxisDirection.NegX => new float3(-length, 0, 0),
             AxisDirection.PosX => new float3(length, 0, 0),
@@ -65,6 +74,7 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int3 int3(this AxisDirection direction, int length = 1) => direction switch {
             AxisDirection.NegX => new int3(-length, 0, 0),
             AxisDirection.PosX => new int3(length, 0, 0),
@@ -75,47 +85,35 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection opposite(this AxisDirection direction) =>
             (AxisDirection)(((byte)direction & 0b110) | (~(byte)direction & 0b1));
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Axis axis(this AxisDirection direction) => (Axis)((byte)direction >> 1);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int3 offset(this int3 pos, AxisDirection direction, int value = 1) => pos + direction.int3(value);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isNeg(this AxisDirection direction) => ((byte)direction & 0b1) == 0;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool isPos(this AxisDirection direction) => ((byte)direction & 0b1) != 0;
 
         //@formatter:off
-        private static AxisDirection[,] ROTATION_LUT = new AxisDirection[6, 6] {
-            {AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY},
-            {AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.PosY, AxisDirection.NegY},
-            {AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX},
-            {AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.NegX, AxisDirection.PosX},
-            {AxisDirection.PosY, AxisDirection.NegY, AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ},
-            {AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX, AxisDirection.NegZ, AxisDirection.PosZ},
+        private static AxisDirection[] ROTATION_LUT = new AxisDirection[6 * 6] {
+            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY,
+            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.PosY, AxisDirection.NegY,
+            AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX,
+            AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.NegX, AxisDirection.PosX,
+            AxisDirection.PosY, AxisDirection.NegY, AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ,
+            AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX, AxisDirection.NegZ, AxisDirection.PosZ,
         };
         //@formatter:on
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection rotate(this AxisDirection self, AxisDirection axis) =>
-            ROTATION_LUT[(byte)axis, (byte)self];
-    }
-
-    public class AxisDirectionMap<T> {
-        private T[] map = new T[6];
-
-        public AxisDirectionMap(T initialValue) {
-            fill(initialValue);
-        }
-
-        public T this[AxisDirection key] {
-            get => map[(byte)key];
-            set => map[(byte)key] = value;
-        }
-
-        public void fill(T value) {
-            for (int i = 0; i < 6; i++) {
-                map[i] = value;
-            }
-        }
+            ROTATION_LUT[(byte)axis * 6 + (byte)self];
     }
 }

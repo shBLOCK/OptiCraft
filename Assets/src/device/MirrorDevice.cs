@@ -1,33 +1,36 @@
-﻿using core;
+﻿using System;
+using core;
 using UnityEngine;
 using utils;
 
 namespace device {
     public class MirrorDevice : MirrorLikeDevice {
         private bool doubleSided = true;
-        private readonly AxisDirectionMap<BeamIOPair> beams = new(BeamIOPair.INVALID);
+        private readonly BeamIOPair[] beams = CollectionUtils.newFilledArray(6, BeamIOPair.INVALID);
 
         public override void onBeamHit(ref Beam beam) {
-            space.consumeBeam(beam.id);
+            space.consumeBeam(ref beam);
             if (mirrorDir.reflect(beam.direction.opposite(), out var reflectDir, out var isFrontSide)) {
                 if (isFrontSide || doubleSided) {
-                    beams[beam.direction.opposite()] = new BeamIOPair(
+                    beams[(byte)beam.direction.opposite()] = new BeamIOPair(
                         beam.id,
-                        space.emitBeam(new Beam(reflectDir, gridPos, beam.image)).id
+                        space.emitBeam(new Beam(gridPos, reflectDir, beam.image)).id
                     );
                 }
             }
         }
 
         public override void onBeamEnd(ref Beam beam) {
-            space.stopEmitBeam(beams[beam.direction.opposite()].output);
+            var io = beams[(byte)beam.direction.opposite()];
+            if (io.output != Beam.INVALID_ID) space.stopEmitBeam(io.output);
+            beams[(byte)beam.direction.opposite()] = BeamIOPair.INVALID;
         }
         
         public override void onRemoved() {
             for (byte i = 0; i < 6; i++) {
-                var pair = beams[(AxisDirection)i];
+                var pair = beams[i];
                 if (pair != BeamIOPair.INVALID) {
-                    beams[(AxisDirection)i] = BeamIOPair.INVALID;
+                    beams[i] = BeamIOPair.INVALID;
                     space.stopConsumeBeam(pair.input);
                     space.stopEmitBeam(pair.output);
                 }
@@ -37,7 +40,7 @@ namespace device {
 
         public override void reset() {
             base.reset();
-            beams.fill(BeamIOPair.INVALID);
+            Array.Fill(beams, BeamIOPair.INVALID);
         }
 
         private static readonly OCDeviceType<MirrorDevice> _TYPE = new("mirror");

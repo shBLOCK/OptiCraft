@@ -1,0 +1,19 @@
+﻿#pragma kernel BeamSplitterMain;
+
+#include "Assets/assets/shader_include/compute_utils.hlsl"
+#include "Assets/assets/shader_include/beam_image.hlsl"
+
+DECLARE_BEAM_IMAGE(uInputAImage);
+DECLARE_BEAM_IMAGE(uInputBImage);
+RWTexture2D<float4> uOutputImage;
+
+SamplerState PointClampSampler;
+
+[numthreads(16,16,1)]
+void BeamSplitterMain(uint3 id : SV_DispatchThreadID) {
+    float2 uv;
+    if (!dispatchIdToImageUV(id.xy, uOutputImage, uv)) return;
+    float4 inputA = sampleBeamImage(uInputAImage, uv, PointClampSampler);
+    float4 inputB = sampleBeamImage(uInputBImage, uv, PointClampSampler);
+    uOutputImage[id.xy] = inputA + inputB;
+}

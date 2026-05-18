@@ -45,7 +45,7 @@ namespace render {
 
                 {
                     var bounds = new Bounds(
-                        tailPos + beam.direction.float3(length),
+                        tailPos + beam.direction.float3(length / 2f),
                         xy.Item1.float3() + xy.Item2.float3() + beam.direction.axis().float3(length)
                     );
                     if (bounds.IntersectRay(mouseRay)) {

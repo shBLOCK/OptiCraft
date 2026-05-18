@@ -1,4 +1,7 @@
-﻿namespace utils {
+﻿using System;
+using System.Runtime.CompilerServices;
+
+namespace utils {
     // ReSharper disable once ShiftExpressionZeroLeftOperand
     public enum MirrorDirection : byte {
         // 0b00_dirB_dirA
@@ -24,9 +27,13 @@
     }
 
     public static class MirrorDirectionExtensions {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection dirA(this MirrorDirection md) => (AxisDirection)((byte)md & 0b111);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection dirB(this MirrorDirection md) => (AxisDirection)((byte)md >> 3);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool reflect(this MirrorDirection md, AxisDirection dir, out AxisDirection reflectDir,
             out bool isFrontSide) {
             if (dir == md.dirA()) {
@@ -52,6 +59,15 @@
             return false;
         }
 
+        public static (AxisDirection, AxisDirection) getDirOnAxisAndOtherDir(this MirrorDirection md, Axis axis) {
+            var dirA = md.dirA();
+            var dirB = md.dirB();
+            if (dirA.axis() == axis) return (dirA, dirB);
+            if (dirB.axis() == axis) return (dirB, dirA);
+            throw new InvalidOperationException($"No matching direction in {md} on {axis}");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MirrorDirection fromDirections(AxisDirection dir1, AxisDirection dir2) {
             byte dir1byte = (byte)dir1;
             byte dir2byte = (byte)dir2;
@@ -79,6 +95,7 @@
                     }
                 }
             }
+
             return fromDirections(dir1, dir2);
         }
     }

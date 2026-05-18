@@ -12,7 +12,7 @@ namespace device {
 
         public override void onBeamHitEdge(ref Beam beam) {
             if (beam.direction.axis() != mirrorDir.dirA().axis() && beam.direction.axis() != mirrorDir.dirB().axis()) {
-                space.consumeBeam(beam.id);
+                space.consumeBeam(ref beam);
             }
         }
 
@@ -29,11 +29,14 @@ namespace device {
 
         public override void render(CommandBuffer cmds) {
             base.render(cmds);
-            float3 pos = gridPos;
-            new Bounds(pos + mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.red);
-            new Bounds(pos + mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.green);
-            new Bounds(pos - mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.darkRed);
-            new Bounds(pos - mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.darkGreen);
+            _tmpDrawIO();
+        }
+
+        protected void _tmpDrawIO() {
+            new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.red);
+            new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.green);
+            new Bounds(gridPos - mirrorDir.dirA().float3(), new float3(0.2f)).debugDraw(Color.darkRed);
+            new Bounds(gridPos - mirrorDir.dirB().float3(), new float3(0.2f)).debugDraw(Color.darkGreen);
         }
 
         public override void userActionRotate(AxisDirection axis) {

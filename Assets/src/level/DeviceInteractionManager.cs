@@ -25,8 +25,10 @@ namespace level {
 
         public void _OnGUI() {
             if (grabbedDevice == null) {
-                if (GUILayout.Button("Mirror")) {
-                    grabbedDevice = new MirrorDevice();
+                foreach (var deviceType in OCDevice.TYPES) {
+                    if (GUILayout.Button(deviceType.id)) {
+                        grabbedDevice = deviceType.construct();
+                    }
                 }
 
                 if (GUILayout.Button("BeamSourceXG")) {

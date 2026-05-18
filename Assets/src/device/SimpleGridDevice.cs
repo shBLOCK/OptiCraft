@@ -4,6 +4,7 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using utils;
+using Vertx.Debugging;
 
 namespace device {
     public abstract class SimpleGridDevice : OCDevice {
@@ -33,7 +34,12 @@ namespace device {
         }
 
         public override void render(CommandBuffer cmds) {
-            new Bounds(new float3(gridPos), new float3(1.5f)).debugDraw(Color.darkMagenta);
+            _tmpDrawBox(Color.darkMagenta);
+        }
+
+        protected void _tmpDrawBox(Color color) {
+            D.raw(new Bounds(new float3(gridPos), new float3(1.5f)), color);
+            D.raw(new Shape.Text(new float3(gridPos), TYPE.id, Camera.main), Color.gray);
         }
         
         public void _tmp_setGridPos(int3 pos) {

@@ -67,6 +67,8 @@ namespace device {
             Assert.IsFalse(REGISTRY.ContainsKey(type.id));
             REGISTRY[type.id] = type;
         }
+        
+        public static IEnumerable<OCDeviceType> TYPES => REGISTRY.Values;
 
         public JsonObject save() {
             var data = new JsonObject();

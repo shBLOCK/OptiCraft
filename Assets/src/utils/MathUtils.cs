@@ -1,9 +1,18 @@
-﻿using System.Text.Json.Nodes;
+﻿using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Unity.Mathematics;
 using UnityEngine;
+using Vertx.Debugging;
 
 namespace utils {
     public static class MathUtils {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint ceilDiv(this uint self, uint other) => (self + other - 1) / other;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint2 ceilDiv(this uint2 self, uint2 value) =>
+            new(self.x.ceilDiv(value.x), self.y.ceilDiv(value.y));
+
         public static JsonArray toJsonArray(this int3 value) => new() { value.x, value.y, value.z };
 
         public static int3 toInt3(this JsonArray data) =>

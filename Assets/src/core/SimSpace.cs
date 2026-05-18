@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using device;
 using JetBrains.Annotations;
@@ -23,10 +24,12 @@ namespace core {
         private NativeList<Beam> beams = new(Allocator.Persistent);
         private Stack<ushort> beamsFreeSlots = new();
         private List<Beam> beamsStaging = new();
+        private List<Beam> beamsStagingExtra = new();
         public event Action<Beam> onBeamAdded;
         public event Action<Beam> onBeamRemoved;
 
         [CanBeNull]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public OCDevice getDeviceAt(int3 pos) => posDeviceMap.GetValueOrDefault(pos);
 
         public IEnumerable<OCDevice> enumerateDevices() {
@@ -42,13 +45,28 @@ namespace core {
         }
 
         public void tick() {
-            // beam collision
+            // beam-device interaction: remove ended beams
+            for (int i = 0; i < beams.Length; i++) {
+                ref var beam = ref beams.ElementAt(i);
+                if (!beam.isValid) continue;
+                if (!beam.beingEmitted && beam.length <= 0) {
+                    getDeviceAt(beam.headPos)?.onBeamEnd(ref beam);
+                    if (GridUtils.isGridEdge(beam.headPos)) {
+                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamEndEdge(ref beam);
+                    }
+
+                    beamsFreeSlots.Push(beam.id);
+                    beam._end(simulator.beamImageDataManager);
+                    onBeamRemoved?.Invoke(beam);
+                }
+            }
+
+            // beam-device interaction: beam hit
             for (int i = 0; i < beams.Length; i++) {
                 ref var beam = ref beams.ElementAt(i);
                 if (!beam.isValid) continue;
                 if (!beam.beingConsumed) {
                     getDeviceAt(beam.headPos)?.onBeamHit(ref beam);
-                    Debug.Log($"{beam.headPos}: {getDeviceAt(beam.headPos)}");
                     if (GridUtils.isGridEdge(beam.headPos)) {
                         getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHitEdge(ref beam);
                     }
@@ -62,25 +80,21 @@ namespace core {
 
             // emit staged beams
             foreach (var beam in beamsStaging) {
+                beams[beam.id] = beam;
+            }
+
+            foreach (var beam in beamsStagingExtra) {
                 beams.Add(beam);
             }
 
             beamsStaging.Clear();
+            beamsStagingExtra.Clear();
 
             // tick beams
             for (int i = 0; i < beams.Length; i++) {
                 ref var beam = ref beams.ElementAt(i);
                 if (!beam.isValid) continue;
-                if (!beam.tick()) {
-                    getDeviceAt(beam.headPos)?.onBeamEnd(ref beam);
-                    if (GridUtils.isGridEdge(beam.headPos)) {
-                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamEndEdge(ref beam);
-                    }
-
-                    beamsFreeSlots.Push((ushort)i);
-                    beam._invalidate();
-                    onBeamRemoved?.Invoke(beam);
-                }
+                beam.tick();
             }
         }
 
@@ -104,31 +118,39 @@ namespace core {
             posDeviceMap.Remove(gridPos);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ref Beam getBeam(ushort id) => ref beams.ElementAt(id);
+
+        /// <returns>The same reference as the parameter beam reference, for convenience.
+        /// **NOT** a reference to the actual beam instance in the space.</returns>
         public Beam emitBeam(Beam beam) {
-            beam._emit();
+            beam._emit(simulator.beamImageDataManager);
             if (beamsFreeSlots.TryPop(out var slot)) {
                 beam.id = slot;
-                beams[slot] = beam;
-            } else {
-                beam.id = (ushort)(beams.Length + beamsStaging.Count);
                 beamsStaging.Add(beam);
+            } else {
+                beam.id = (ushort)(beams.Length + beamsStagingExtra.Count);
+                beamsStagingExtra.Add(beam);
             }
 
             onBeamAdded?.Invoke(beam);
             return beam;
         }
 
-        public void stopEmitBeam(ushort id) {
-            beams.ElementAt(id)._stopEmit();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void stopEmitBeam(ushort id) => beams.ElementAt(id)._stopEmit();
 
-        public void consumeBeam(ushort id) {
-            beams.ElementAt(id)._consume();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void stopEmitBeam(ref Beam beam) => beam._stopEmit();
 
-        public void stopConsumeBeam(ushort id) {
-            beams.ElementAt(id)._stopConsume();
-        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void consumeBeam(ushort id) => beams.ElementAt(id)._consume();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void consumeBeam(ref Beam beam) => beam._consume();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void stopConsumeBeam(ushort id) => beams.ElementAt(id)._stopConsume();
 
         public void reset() {
             foreach (var device in devices) {
@@ -152,6 +174,7 @@ namespace core {
             beams.Clear();
             beamsFreeSlots.Clear();
             beamsStaging.Clear();
+            beamsStagingExtra.Clear();
         }
 
         public JsonObject save() {
