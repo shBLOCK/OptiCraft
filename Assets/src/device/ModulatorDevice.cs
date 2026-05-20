@@ -58,7 +58,7 @@ namespace device {
 
         [RuntimeInitializeOnLoadMethod]
         private static void LOAD_CS() {
-            CS = Resources.Load<ComputeShader>("device/modulator");
+            CS = Resources.Load<ComputeShader>("compute/device/modulator");
             CSK = CS.FindKernel("ModulatorMain");
             MODULATOR_B = CS.keywordSpace.FindKeyword("MODULATOR_B");
             CS.EnableKeyword(MODULATOR_B);
@@ -134,8 +134,8 @@ namespace device {
             ).id;
         }
 
-        public override void render(CommandBuffer cmds) {
-            base.render(cmds);
+        public override void render() {
+            base.render();
             D.raw(new Bounds(new float3(gridPos), modulatingAxis.float3(1.5f) + 0.1f), Color.green);
             D.raw(new Bounds(new float3(gridPos), modulatorAxis.float3(1.5f) + 0.1f), Color.red);
         }

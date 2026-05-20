@@ -27,7 +27,7 @@ namespace device {
             }
         }
 
-        private bool condition() => space != null && space.simulator.tickNumber % 100 == 0;
+        private bool condition() => isInSpace && space.simulator.tickNumber % 100 == 0;
         
         public override void tick() {
             if (condition()) {
@@ -70,8 +70,8 @@ namespace device {
             direction = direction.rotate(axis);
         }
 
-        public override void render(CommandBuffer cmds) {
-            base.render(cmds);
+        public override void render() {
+            base.render();
             D.raw(new Bounds(new float3(gridPos) + direction.float3(0.75f), new float3(0.1f)), Color.red);
             D.raw(new Bounds(new float3(gridPos) + direction.float3(-0.75f), new float3(0.1f)), Color.green);
             if (condition()) {

@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace utils {
     // ReSharper disable once ShiftExpressionZeroLeftOperand
@@ -34,6 +37,9 @@ namespace utils {
         public static AxisDirection dirB(this MirrorDirection md) => (AxisDirection)((byte)md >> 3);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 normal(this MirrorDirection md) => (md.dirA().float3() + md.dirB().float3()).norm();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool reflect(this MirrorDirection md, AxisDirection dir, out AxisDirection reflectDir,
             out bool isFrontSide) {
             if (dir == md.dirA()) {
@@ -59,6 +65,27 @@ namespace utils {
             return false;
         }
 
+        private static readonly quaternion[] MODEL_ROTATION_LUT = Enumerable
+            .Range(0, Enum.GetValues(typeof(MirrorDirection)).Cast<byte>().Max() + 1)
+            .Select(i => {
+                var value = (MirrorDirection)i;
+                return Enum.IsDefined(typeof(MirrorDirection), value)
+                    ? (quaternion)Quaternion.LookRotation(
+                        value.normal(),
+                        math.cross(value.dirA().float3(), value.dirB().float3())
+                    )
+                    : quaternion.identity;
+            }).ToArray();
+
+        // private static readonly float4x4[] MODEL_ROTATION_MATRIX_LUT =
+        // MODEL_ROTATION_LUT.Select(quat => new float4x4(quat, float3.zero)).ToArray();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion modelRotation(this MirrorDirection md) => MODEL_ROTATION_LUT[(byte)md];
+
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // public static float4x4 modelRotationMatrix(this MirrorDirection md) => MODEL_ROTATION_MATRIX_LUT[(byte)md];
+
         public static (AxisDirection, AxisDirection) getDirOnAxisAndOtherDir(this MirrorDirection md, Axis axis) {
             var dirA = md.dirA();
             var dirB = md.dirB();
@@ -78,13 +105,30 @@ namespace utils {
             }
         }
 
-        public static MirrorDirection rotateStep(this MirrorDirection md, AxisDirection axis) {
+        public enum RotateStepType : byte {
+            None,
+            Deg45,
+            Deg90
+        }
+
+        public static MirrorDirection rotateStep(
+            this MirrorDirection md,
+            AxisDirection axis,
+            out RotateStepType rotateStepType
+        ) {
             var dir1 = md.dirA();
             var dir2 = md.dirB();
+            if (dir1.axis() == axis.axis() && dir2.axis() == axis.axis()) {
+                rotateStepType = RotateStepType.None;
+                return md;
+            }
+
             if (dir1.axis() == axis.axis() || dir2.axis() == axis.axis()) {
+                rotateStepType = RotateStepType.Deg90;
                 dir1 = dir1.rotate(axis);
                 dir2 = dir2.rotate(axis);
             } else {
+                rotateStepType = RotateStepType.Deg45;
                 if (dir1 == dir2) {
                     dir2 = dir2.rotate(axis);
                 } else {

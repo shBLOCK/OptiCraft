@@ -1,15 +1,26 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using core;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Assertions;
-using UnityEngine.Rendering;
 using utils;
 
 namespace device {
     public abstract class OCDevice {
         public SimSpace space { get; private set; }
+
+        public bool isInSpace {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => space != null;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void assertInSpace() => Assert.IsTrue(isInSpace, "Device not in space");
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        protected void assertNotInSpace() => Assert.IsFalse(isInSpace, "Device can not be in space");
 
         public virtual void onAdded(SimSpace simSpace) {
             Assert.IsNull(space, "Device already added to space");
@@ -32,12 +43,12 @@ namespace device {
         public virtual void onBeamEnd(ref Beam beam) { }
         public virtual void onBeamEndEdge(ref Beam beam) { }
 
-        public virtual void render(CommandBuffer cmds) { }
+        public virtual void render() { }
 
         public abstract Bounds getVisualBox();
 
         public virtual void userActionRotate(AxisDirection axis) {
-            Assert.IsTrue(space == null);
+            assertNotInSpace();
         }
 
         protected virtual JsonObject saveData() => new();
@@ -67,7 +78,7 @@ namespace device {
             Assert.IsFalse(REGISTRY.ContainsKey(type.id));
             REGISTRY[type.id] = type;
         }
-        
+
         public static IEnumerable<OCDeviceType> TYPES => REGISTRY.Values;
 
         public JsonObject save() {

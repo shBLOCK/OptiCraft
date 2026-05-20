@@ -69,7 +69,7 @@ namespace device {
             MATERIAL = Resources.Load<Material>("Green");
         }
 
-        public override void render(CommandBuffer cmds) {
+        public override void render() {
             var matrix = Matrix4x4.TRS(
                 new float3(gridPos) - new float3(0f, 0.5f, 0f),
                 Quaternion.FromToRotation(Vector3.forward, direction.float3()),

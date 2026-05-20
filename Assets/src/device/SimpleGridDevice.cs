@@ -2,13 +2,14 @@
 using core;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Assertions;
 using UnityEngine.Rendering;
 using utils;
 using Vertx.Debugging;
 
 namespace device {
     public abstract class SimpleGridDevice : OCDevice {
-        protected int3 gridPos;
+        protected int3 gridPos { get; private set; }
 
         public override void onAdded(SimSpace simSpace) {
             base.onAdded(simSpace);
@@ -33,17 +34,33 @@ namespace device {
             gridPos = data["gridPos"].AsArray().toInt3();
         }
 
-        public override void render(CommandBuffer cmds) {
+        public override void render() {
             _tmpDrawBox(Color.darkMagenta);
         }
 
         protected void _tmpDrawBox(Color color) {
-            D.raw(new Bounds(new float3(gridPos), new float3(1.5f)), color);
-            D.raw(new Shape.Text(new float3(gridPos), TYPE.id, Camera.main), Color.gray);
+            var pos = getRenderPosWithAnimation();
+            D.raw(new Bounds(pos, new float3(1.5f)), color);
+            D.raw(new Shape.Text(pos, TYPE.id, Camera.main), Color.gray);
         }
+
+        private float3 anim_gridPos;
+        private float anim_startTime = float.NegativeInfinity;
         
         public void _tmp_setGridPos(int3 pos) {
+            assertNotInSpace();
+            
+            anim_gridPos = getRenderPosWithAnimation();
+            anim_startTime = Time.time;
+            
             gridPos = pos;
+        }
+
+        protected float3 getRenderPosWithAnimation() {
+            var animProgress = (Time.time - anim_startTime) / 0.1f;
+            if (animProgress >= 1f) return new float3(gridPos);
+            animProgress = mathx.smoothstop(animProgress, 2);
+            return math.lerp(anim_gridPos, new float3(gridPos), animProgress);
         }
     }
 }

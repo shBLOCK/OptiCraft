@@ -19,7 +19,7 @@ namespace device {
 
         [RuntimeInitializeOnLoadMethod]
         private static void LOAD_CS() {
-            CS = Resources.Load<ComputeShader>("device/channel_broadcast");
+            CS = Resources.Load<ComputeShader>("compute/device/channel_broadcast");
             CSK = CS.FindKernel("ChannelBroadcastMain");
             uInputImage = new BeamImageShaderUniform("uInputImage");
             uOutputImage = Shader.PropertyToID("uOutputImage");
@@ -92,8 +92,8 @@ namespace device {
             this.axis = this.axis.rotate(axis.axis());
         }
 
-        public override void render(CommandBuffer cmds) {
-            base.render(cmds);
+        public override void render() {
+            base.render();
             D.raw(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.white);
         }
 

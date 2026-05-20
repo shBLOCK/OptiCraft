@@ -5,18 +5,17 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using utils;
+using Vertx.Debugging;
 
 namespace level {
     public class DeviceInteractionManager : MonoBehaviour {
         private Simulator simulator;
         private InputSystem_Actions inputActions;
-        private CommandBuffer cmds;
         
         private void Awake() {
             simulator = GetComponent<Simulator>();
             inputActions = new InputSystem_Actions();
             inputActions.Enable();
-            cmds = new CommandBuffer();
         }
         
         private OCDevice hoveredDevice;
@@ -76,7 +75,7 @@ namespace level {
             }
 
             if (grabbedDevice != null) {
-                grabbedDevice.render(cmds);
+                grabbedDevice.render();
                 
                 if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY);
                 if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY);
@@ -100,7 +99,8 @@ namespace level {
 
             if (hoveredDevice != null) {
                 var bounds = hoveredDevice.getVisualBox();
-                bounds.debugDraw(Color.HSVToRGB(Time.time, 1f, 0.5f));
+                bounds.Expand(0.1f);
+                D.raw(bounds, Color.HSVToRGB(math.frac(Time.time), 1f, 0.8f));
 
                 AxisDirection? rotationAxis = null;
                 if (inputActions.Player.DeviceRotateCCW.triggered) rotationAxis = hoveredDeviceNormal;
@@ -122,9 +122,6 @@ namespace level {
                     }
                 }
             }
-            
-            Graphics.ExecuteCommandBuffer(cmds);
-            cmds.Clear();
         }
     }
 }

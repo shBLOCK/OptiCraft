@@ -65,8 +65,8 @@ namespace device {
             redDirection = Enum.Parse<AxisDirection>(data["redDirection"].GetValue<string>());
         }
 
-        public override void render(CommandBuffer cmds) {
-            base.render(cmds);
+        public override void render() {
+            base.render();
             D.raw(new Bounds(new float3(gridPos) + redDirection.float3(0.75f), new float3(0.1f)), Color.red);
             D.raw(new Bounds(new float3(gridPos) + inputDirection.opposite().float3(0.75f), new float3(0.1f)),
                 Color.green);

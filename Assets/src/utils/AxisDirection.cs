@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Unity.Mathematics;
+using UnityEngine;
 
 namespace utils {
     public enum Sign : byte {
@@ -65,6 +67,13 @@ namespace utils {
             if (self == axis) return self;
             return orthoAxes((self, axis));
         }
+
+        private static readonly quaternion[] MODEL_ROTATION_LUT = Enumerable.Range(0, 3)
+            .Select(i => (quaternion)Quaternion.FromToRotation(Vector3.forward, ((Axis)i).float3()))
+            .ToArray();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion modelRotation(this Axis axis) => MODEL_ROTATION_LUT[(byte)axis];
     }
 
     public enum AxisDirection : byte {
@@ -113,7 +122,7 @@ namespace utils {
         public static Sign sign(this AxisDirection direction) => (Sign)((byte)direction & 0b1);
 
         //@formatter:off
-        private static AxisDirection[] ROTATION_LUT = new AxisDirection[6 * 6] {
+        private static readonly AxisDirection[] ROTATION_LUT = new AxisDirection[6 * 6] {
             AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.PosY, AxisDirection.NegY,
             AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY,
             AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.NegX, AxisDirection.PosX,

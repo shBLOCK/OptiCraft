@@ -3,9 +3,12 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using utils;
+using Vertx.Debugging;
 
 namespace render {
     public class BeamRenderer : MonoBehaviour {
+        public float beamSize = 1f;
+
         private static Material MATERIAL;
 
         [RuntimeInitializeOnLoadMethod]
@@ -30,6 +33,7 @@ namespace render {
             var mouseRay = Camera.main.ScreenPointToRay(inputActions.UI.Point.ReadValue<Vector2>());
             hoveringBeam = null;
 
+            Bounds? hoveringBounds = null;
             foreach (var beam in simulator.rootSpace.enumerateBeams()) {
                 var xy = beam.direction.axis().orthoAxes();
                 float3 tailPos = beam.tailPos;
@@ -50,13 +54,14 @@ namespace render {
                     );
                     if (bounds.IntersectRay(mouseRay)) {
                         hoveringBeam = beam;
+                        hoveringBounds = bounds;
                     }
                 }
 
                 var matrix = new Matrix4x4(
-                    new float4(xy.Item1.float3(), 0f),
-                    new float4(xy.Item2.float3(), 0f),
-                    new float4(beam.direction.float3(length - 0.2f), 0f),
+                    new float4(xy.Item1.float3(beamSize), 0f),
+                    new float4(xy.Item2.float3(beamSize), 0f),
+                    new float4(beam.direction.float3(length), 0f),
                     new float4(tailPos, 1f)
                 );
                 var matProps = new MaterialPropertyBlock();
@@ -64,6 +69,12 @@ namespace render {
                 matProps.SetColor("_BaseColor", (Vector4)beam.image.modulation);
                 Graphics.RenderMesh(new RenderParams(MATERIAL) { matProps = matProps }, MESH, 0, matrix);
                 // cmds.DrawMesh(MESH, matrix, MATERIAL, 0, -1, matProps);
+            }
+
+            if (hoveringBounds != null) {
+                var bounds = hoveringBounds.Value;
+                bounds.Expand(0.1f);
+                D.raw(bounds, Color.HSVToRGB(math.frac(Time.time + 0.5f), 1f, 0.8f));
             }
 
             // Graphics.ExecuteCommandBuffer(cmds);
