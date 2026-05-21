@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Nodes;
+using core.beam;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,7 +8,7 @@ namespace core {
         public int tickNumber { get; private set; } = 0;
         public float partialTick = 1f;
 
-        public readonly BeamImageData.BeamImageDataManager beamImageDataManager = new();
+        public readonly BeamImageData.Manager beamImageDataManager = new();
         public CommandBuffer cmds;
 
         public SimSpace rootSpace;

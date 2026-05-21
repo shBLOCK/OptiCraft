@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using UnityEngine;
 using UnityEngine.Rendering;
 using utils;
@@ -13,9 +14,11 @@ namespace device {
             space.consumeBeam(ref beam);
             if (mirrorDir.reflect(beam.direction.opposite(), out var reflectDir, out var isFrontSide)) {
                 if (isFrontSide || doubleSided) {
+                    var image = beam.image;
+                    var orientation = image.orientation.reflect(beam.direction.opposite(), reflectDir);
                     beams[beam.direction.opposite()] = new BeamIOPair(
                         beam.id,
-                        space.emitBeam(new Beam(gridPos, reflectDir, beam.image)).id
+                        space.emitBeam(new Beam(gridPos, reflectDir, image.withOrientation(orientation))).id
                     );
                 }
             }
@@ -76,10 +79,8 @@ namespace device {
         }
 
         public override void render() {
-            base.render();
-
             getRenderParamsWithAnimation(out var visualMirrorDir, out var modelMat);
-            
+
             var (frame, mirror) = visualMirrorDir.dirA() == visualMirrorDir.dirB()
                 ? (MESH_FRAME_90DEG, MESH_MIRROR_90DEG)
                 : (MESH_FRAME_45DEG, MESH_MIRROR_45DEG);

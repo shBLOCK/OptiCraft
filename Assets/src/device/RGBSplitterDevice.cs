@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;

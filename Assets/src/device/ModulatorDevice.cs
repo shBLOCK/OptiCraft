@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -124,7 +125,8 @@ namespace device {
                     space.getBeam(modulatorBBeam).image.setToShader(bidm, cmds, CS, CSK, uModulatorBImage);
                 var size = modulatingBeam.image.size;
                 var imageData = bidm.addNew(size);
-                outputImage = new BeamImage(imageData.id, size, BeamImage.Orientation.PosXPosY, 0, 1f, 0f);
+                //TODO: handle orientation
+                outputImage = new BeamImage(imageData.id, size, BeamImageOrientation.PosXPosY, 0, 1f, 0f);
                 cmds.SetComputeTextureParam(CS, CSK, uOutputImage, imageData._tmp_getRT());
                 cmds.dispatchCompute2D(CS, CSK, size);
             }

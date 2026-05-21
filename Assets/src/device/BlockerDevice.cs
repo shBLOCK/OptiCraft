@@ -1,4 +1,5 @@
 ﻿using core;
+using core.beam;
 using UnityEngine;
 using utils;
 
@@ -24,8 +25,22 @@ namespace device {
                 var id = consumingBeams[(AxisDirection)i];
                 if (id != Beam.INVALID_ID) space.stopConsumeBeam(id);
             }
+
             reset();
             base.onRemoved();
+        }
+
+        private static Mesh MESH;
+        private static Material MATERIAL;
+
+        [RuntimeInitializeOnLoadMethod]
+        private static void LOAD_MESH() {
+            MESH = Resources.Load<GameObject>("model/device/blocker").getMesh();
+            MATERIAL = Resources.Load<Material>("material/device/blocker/blocker");
+        }
+
+        public override void render() {
+            Graphics.RenderMesh(new RenderParams(MATERIAL), MESH, 0, Matrix4x4.Translate(getRenderPosWithAnimation()));
         }
 
         private static readonly OCDeviceType<BlockerDevice> _TYPE = new("blocker");

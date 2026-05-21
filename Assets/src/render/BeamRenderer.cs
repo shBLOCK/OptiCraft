@@ -1,4 +1,5 @@
 ﻿using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -35,7 +36,7 @@ namespace render {
 
             Bounds? hoveringBounds = null;
             foreach (var beam in simulator.rootSpace.enumerateBeams()) {
-                var xy = beam.direction.axis().orthoAxes();
+                var basis = beam.image.orientation.basis(beam.direction.axis());
                 float3 tailPos = beam.tailPos;
                 if (!beam.beingEmitted) {
                     tailPos -= beam.direction.float3() * (1f - simulator.partialTick);
@@ -50,7 +51,7 @@ namespace render {
                 {
                     var bounds = new Bounds(
                         tailPos + beam.direction.float3(length / 2f),
-                        xy.Item1.float3() + xy.Item2.float3() + beam.direction.axis().float3(length)
+                        basis.x.axis().float3() + basis.y.axis().float3() + beam.direction.axis().float3(length)
                     );
                     if (bounds.IntersectRay(mouseRay)) {
                         hoveringBeam = beam;
@@ -59,8 +60,8 @@ namespace render {
                 }
 
                 var matrix = new Matrix4x4(
-                    new float4(xy.Item1.float3(beamSize), 0f),
-                    new float4(xy.Item2.float3(beamSize), 0f),
+                    new float4(basis.x.float3(beamSize), 0f),
+                    new float4(basis.y.float3(beamSize), 0f),
                     new float4(beam.direction.float3(length), 0f),
                     new float4(tailPos, 1f)
                 );

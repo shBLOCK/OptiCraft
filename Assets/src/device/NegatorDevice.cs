@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using utils;
@@ -87,9 +88,6 @@ namespace device {
         }
 
         public override void render() {
-            base.render();
-            D.raw(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.black);
-
             var quat = AnimationUtils.deviceRotationAnimation(
                 (Time.time - anim_rotStartTime) / 0.2f,
                 anim_lastAxis.modelRotation(), axis.modelRotation(),

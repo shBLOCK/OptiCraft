@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -30,7 +31,7 @@ namespace device {
                 } else {
                     var data = space.simulator.beamImageDataManager.addNew((uint2)image.size());
                     data.blitFromTexture(image);
-                    beamImage = new BeamImage(data.id, data.size, BeamImage.Orientation.PosXPosY, 0, color, 0f);
+                    beamImage = new BeamImage(data.id, data.size, BeamImageOrientation.PosXPosY, 0, color, 0f);
                 }
 
                 beam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;
@@ -59,7 +60,21 @@ namespace device {
             color = data["color"].AsArray().toFloat4();
             imagePath = data["imagePath"]?.GetValue<string>();
         }
+        
+        private AxisDirection anim_rotAxis;
+        private AxisDirection anim_lastDirection;
+        private float anim_rotStartTime = float.NegativeInfinity;
 
+        public override void userActionRotate(AxisDirection axis) {
+            base.userActionRotate(axis);
+
+            anim_lastDirection = direction;
+            anim_rotAxis = axis;
+            anim_rotStartTime = Time.time;
+            
+            direction = direction.rotate(axis);
+        }
+        
         private static Mesh MESH;
         private static Material MATERIAL;
 
@@ -70,17 +85,15 @@ namespace device {
         }
 
         public override void render() {
-            var matrix = Matrix4x4.TRS(
-                new float3(gridPos) - new float3(0f, 0.5f, 0f),
-                Quaternion.FromToRotation(Vector3.forward, direction.float3()),
-                Vector3.one
+            var quat = AnimationUtils.deviceRotationAnimation(
+                (Time.time - anim_rotStartTime) / 0.2f,
+                anim_lastDirection.modelRotation(), direction.modelRotation(),
+                anim_rotAxis.float3(), math.PIHALF,
+                out _
             );
-            Graphics.RenderMesh(new RenderParams(MATERIAL), MESH, 0, matrix);
-        }
-
-        public override void userActionRotate(AxisDirection axis) {
-            base.userActionRotate(axis);
-            direction = direction.rotate(axis);
+            var modelMat = new float4x4(quat, getRenderPosWithAnimation());
+            modelMat = math.mul(modelMat, float4x4.Translate(new float3(0f, -0.5f, 0f)));
+            Graphics.RenderMesh(new RenderParams(MATERIAL), MESH, 0, modelMat);
         }
 
         private static readonly OCDeviceType<BeamSourceDevice> _TYPE = new("beam_source");

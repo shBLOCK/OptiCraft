@@ -1,4 +1,5 @@
 ﻿using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using utils;
@@ -93,7 +94,7 @@ namespace device {
                                 outputImage = new BeamImage(
                                     bidm.addNew(size).id,
                                     size,
-                                    BeamImage.Orientation.PosXPosY,
+                                    BeamImageOrientation.PosXPosY, // TODO
                                     0,
                                     1f, 0f
                                 );
@@ -176,8 +177,6 @@ namespace device {
         }
         
         public override void render() {
-            base.render();
-
             getRenderParamsWithAnimation(out var visualMirrorDir, out var modelMat);
             
             var (frame, mirror) = visualMirrorDir.dirA() == visualMirrorDir.dirB()

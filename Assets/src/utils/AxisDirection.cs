@@ -44,7 +44,7 @@ namespace utils {
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static (Axis, Axis) orthoAxes(this Axis axis) => axis switch {
+        public static (Axis x, Axis y) orthoBasis(this Axis axis) => axis switch {
             Axis.X => (Axis.Y, Axis.Z),
             Axis.Y => (Axis.X, Axis.Z),
             Axis.Z => (Axis.X, Axis.Y),
@@ -52,7 +52,7 @@ namespace utils {
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Axis orthoAxes(this (Axis, Axis) axes) => axes switch {
+        public static Axis orthoAxis(this (Axis, Axis) axes) => axes switch {
             (Axis.X, Axis.Y) => Axis.Z,
             (Axis.Y, Axis.X) => Axis.Z,
             (Axis.X, Axis.Z) => Axis.Y,
@@ -65,7 +65,7 @@ namespace utils {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Axis rotate(this Axis self, Axis axis) {
             if (self == axis) return self;
-            return orthoAxes((self, axis));
+            return orthoAxis((self, axis));
         }
 
         private static readonly quaternion[] MODEL_ROTATION_LUT = Enumerable.Range(0, 3)
@@ -108,6 +108,16 @@ namespace utils {
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 
+        public static AxisDirection fromNormInt3(int3 vec) => vec switch {
+            { x: -1, y: 0, z: 0 } => AxisDirection.NegX,
+            { x: 1, y: 0, z: 0 } => AxisDirection.PosX,
+            { x: 0, y: -1, z: 0 } => AxisDirection.NegY,
+            { x: 0, y: 1, z: 0 } => AxisDirection.PosY,
+            { x: 0, y: 0, z: -1 } => AxisDirection.NegZ,
+            { x: 0, y: 0, z: 1 } => AxisDirection.PosZ,
+            _ => throw new ArgumentOutOfRangeException(nameof(vec), vec, null)
+        };
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection opposite(this AxisDirection direction) =>
             (AxisDirection)(((byte)direction & 0b110) | (~(byte)direction & 0b1));
@@ -135,5 +145,24 @@ namespace utils {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection rotate(this AxisDirection self, AxisDirection axis) =>
             ROTATION_LUT[(byte)axis * 6 + (byte)self];
+
+        private static readonly AxisDirection[] CROSS_LUT = Enumerable.Range(0, 6 * 6)
+            .Select(i => {
+                var a = (AxisDirection)(i / 6 % 6);
+                var b = (AxisDirection)(i % 6);
+                if (a.axis() == b.axis()) return (AxisDirection)byte.MaxValue;
+                var vec = new int3(math.round(math.cross(a.float3(), b.float3())));
+                return fromNormInt3(vec);
+            }).ToArray();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static AxisDirection cross(this AxisDirection a, AxisDirection b) => CROSS_LUT[(byte)a * 6 + (byte)b];
+        
+        private static readonly quaternion[] MODEL_ROTATION_LUT = Enumerable.Range(0, 6)
+            .Select(i => (quaternion)Quaternion.FromToRotation(Vector3.forward, ((AxisDirection)i).float3()))
+            .ToArray();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static quaternion modelRotation(this AxisDirection direction) => MODEL_ROTATION_LUT[(byte)direction];
     }
 }

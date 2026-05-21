@@ -86,7 +86,7 @@ namespace utils {
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // public static float4x4 modelRotationMatrix(this MirrorDirection md) => MODEL_ROTATION_MATRIX_LUT[(byte)md];
 
-        public static (AxisDirection, AxisDirection) getDirOnAxisAndOtherDir(this MirrorDirection md, Axis axis) {
+        public static (AxisDirection onAxis, AxisDirection other) getDirOnAxisAndOtherDir(this MirrorDirection md, Axis axis) {
             var dirA = md.dirA();
             var dirB = md.dirB();
             if (dirA.axis() == axis) return (dirA, dirB);

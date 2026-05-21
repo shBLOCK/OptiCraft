@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text.Json.Nodes;
 using core;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -36,7 +37,7 @@ namespace device {
                     var size = beam.image.size;
                     var imageData = bidm.addNew(size);
                     outputImage = new BeamImage(imageData.id, size,
-                        BeamImage.Orientation.PosXPosY, 0, 1f, 0f);
+                        BeamImageOrientation.PosXPosY, 0, 1f, 0f);
                     var cmds = space.simulator.cmds;
                     beam.image.setToShader(bidm, cmds, CS, CSK, uInputImage);
                     cmds.SetComputeTextureParam(CS, CSK, uOutputImage, imageData._tmp_getRT());

@@ -101,6 +101,8 @@ namespace level {
                 var bounds = hoveredDevice.getVisualBox();
                 bounds.Expand(0.1f);
                 D.raw(bounds, Color.HSVToRGB(math.frac(Time.time), 1f, 0.8f));
+                
+                D.raw(new Shape.Text(bounds.center, hoveredDevice.TYPE.id, Camera.main), Color.gray);
 
                 AxisDirection? rotationAxis = null;
                 if (inputActions.Player.DeviceRotateCCW.triggered) rotationAxis = hoveredDeviceNormal;
