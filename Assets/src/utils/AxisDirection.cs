@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using JetBrains.Annotations;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -131,16 +128,13 @@ namespace utils {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Sign sign(this AxisDirection direction) => (Sign)((byte)direction & 0b1);
 
-        //@formatter:off
-        private static readonly AxisDirection[] ROTATION_LUT = new AxisDirection[6 * 6] {
-            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.PosY, AxisDirection.NegY,
-            AxisDirection.NegX, AxisDirection.PosX, AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY,
-            AxisDirection.PosZ, AxisDirection.NegZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.NegX, AxisDirection.PosX,
-            AxisDirection.NegZ, AxisDirection.PosZ, AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX,
-            AxisDirection.NegY, AxisDirection.PosY, AxisDirection.PosX, AxisDirection.NegX, AxisDirection.NegZ, AxisDirection.PosZ,
-            AxisDirection.PosY, AxisDirection.NegY, AxisDirection.NegX, AxisDirection.PosX, AxisDirection.NegZ, AxisDirection.PosZ,
-        };
-        //@formatter:on
+        private static readonly AxisDirection[] ROTATION_LUT = Enumerable.Range(0, 6 * 6)
+            .Select(i => {
+                var axis = (AxisDirection)(i / 6 % 6);
+                var vec = (AxisDirection)(i % 6);
+                var rotated = quaternion.AxisAngle(axis.float3(), math.PIHALF).mul(vec.float3());
+                return fromNormInt3(rotated.rint());
+            }).ToArray();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection rotate(this AxisDirection self, AxisDirection axis) =>
@@ -151,13 +145,13 @@ namespace utils {
                 var a = (AxisDirection)(i / 6 % 6);
                 var b = (AxisDirection)(i % 6);
                 if (a.axis() == b.axis()) return (AxisDirection)byte.MaxValue;
-                var vec = new int3(math.round(math.cross(a.float3(), b.float3())));
+                var vec = mathx.cross(a.int3(), b.int3());
                 return fromNormInt3(vec);
             }).ToArray();
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AxisDirection cross(this AxisDirection a, AxisDirection b) => CROSS_LUT[(byte)a * 6 + (byte)b];
-        
+
         private static readonly quaternion[] MODEL_ROTATION_LUT = Enumerable.Range(0, 6)
             .Select(i => (quaternion)Quaternion.FromToRotation(Vector3.forward, ((AxisDirection)i).float3()))
             .ToArray();

@@ -14,7 +14,7 @@ namespace utils {
             } else {
                 progress = (1f - math.cos(progress * math.PI)) * 0.5f;
                 renderNew = progress > 0.5f;
-                var rot = quaternion.AxisAngle(axis, -angle);
+                var rot = quaternion.AxisAngle(axis, angle);
                 if (!renderNew) {
                     return math.slerp(quaternion.identity, rot, progress).mul(lastRot);
                 } else {

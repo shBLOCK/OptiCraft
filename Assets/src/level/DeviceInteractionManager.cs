@@ -77,8 +77,8 @@ namespace level {
             if (grabbedDevice != null) {
                 grabbedDevice.render();
                 
-                if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY);
-                if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY);
+                if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY);
+                if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY);
 
                 if (new Plane(new float3(0f, 1f, 0f), 0f).Raycast(mouseRay, out var dist)) {
                     var pos = mouseRay.GetPoint(dist);
@@ -105,8 +105,8 @@ namespace level {
                 D.raw(new Shape.Text(bounds.center, hoveredDevice.TYPE.id, Camera.main), Color.gray);
 
                 AxisDirection? rotationAxis = null;
-                if (inputActions.Player.DeviceRotateCCW.triggered) rotationAxis = hoveredDeviceNormal;
-                if (inputActions.Player.DeviceRotateCW.triggered) rotationAxis = hoveredDeviceNormal.opposite();
+                if (inputActions.Player.DeviceRotateCCW.triggered) rotationAxis = hoveredDeviceNormal.opposite();
+                if (inputActions.Player.DeviceRotateCW.triggered) rotationAxis = hoveredDeviceNormal;
 
                 if (rotationAxis != null || inputActions.Player.DeviceGrab.triggered) {
                     simulator.rootSpace.removeDevice(hoveredDevice);
