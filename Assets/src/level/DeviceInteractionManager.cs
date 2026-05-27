@@ -11,13 +11,13 @@ namespace level {
     public class DeviceInteractionManager : MonoBehaviour {
         private Simulator simulator;
         private InputSystem_Actions inputActions;
-        
+
         private void Awake() {
             simulator = GetComponent<Simulator>();
             inputActions = new InputSystem_Actions();
             inputActions.Enable();
         }
-        
+
         private OCDevice hoveredDevice;
         private AxisDirection hoveredDeviceNormal;
         private OCDevice grabbedDevice = null;
@@ -37,6 +37,7 @@ namespace level {
                         imagePath = "x_gradient"
                     };
                 }
+
                 if (GUILayout.Button("BeamSourceYG")) {
                     grabbedDevice = new BeamSourceDevice() {
                         imagePath = "y_gradient"
@@ -53,15 +54,19 @@ namespace level {
                     for (int i = 0; i < 4; i++) {
                         color[i] = float.Parse(_tmp_beamSourceColor[i]);
                     }
+
                     grabbedDevice = new BeamSourceDevice() {
                         color = color
                     };
                 }
+
                 GUILayout.EndHorizontal();
             }
         }
 
         private void Update() {
+            var mouseOnGui = GUIUtility.hotControl != 0;
+
             var mouseRay = Camera.main.ScreenPointToRay(inputActions.UI.Point.ReadValue<Vector2>());
             hoveredDevice = null;
             if (grabbedDevice == null) {
@@ -76,20 +81,26 @@ namespace level {
 
             if (grabbedDevice != null) {
                 grabbedDevice.render();
-                
+
                 if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY);
                 if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY);
 
-                if (new Plane(new float3(0f, 1f, 0f), 0f).Raycast(mouseRay, out var dist)) {
-                    var pos = mouseRay.GetPoint(dist);
+                if (new Plane(new float3(0f, 1f, 0f), new float3(0f, -1f, 0f)).Raycast(mouseRay, out var dist)) {
+                    var pos = new float3(mouseRay.GetPoint(dist));
+                    pos.y = 0f;
                     if (grabbedDevice is SimpleGridDevice simpleGridDevice) {
-                        simpleGridDevice._tmp_setGridPos(new int3(pos));
+                        simpleGridDevice._tmp_setGridPos(pos.rint());
                     }
                 }
-                
-                if (inputActions.Player.DeviceGrab.triggered) {
+
+                if (inputActions.Player.DeviceGrab.triggered && !mouseOnGui) {
+                    if (grabbedDevice is SimpleGridDevice simpleGridDevice) {
+                        if (simulator.rootSpace.getDeviceAt(simpleGridDevice.gridPos) != null) goto skip;
+                    }
+
                     simulator.rootSpace.addDevice(grabbedDevice);
                     grabbedDevice = null;
+                    skip: ;
                 }
 
                 if (inputActions.Player.DeviceDelete.triggered) {
@@ -100,22 +111,22 @@ namespace level {
             if (hoveredDevice != null) {
                 var bounds = hoveredDevice.getVisualBox();
                 bounds.Expand(0.1f);
-                D.raw(bounds, Color.HSVToRGB(math.frac(Time.time), 1f, 0.8f));
-                
+                DebugUtils.drawBoundsWireframe(bounds, Color.HSVToRGB(math.frac(Time.time), 1f, 0.8f));
+
                 D.raw(new Shape.Text(bounds.center, hoveredDevice.TYPE.id, Camera.main), Color.gray);
 
                 AxisDirection? rotationAxis = null;
                 if (inputActions.Player.DeviceRotateCCW.triggered) rotationAxis = hoveredDeviceNormal.opposite();
                 if (inputActions.Player.DeviceRotateCW.triggered) rotationAxis = hoveredDeviceNormal;
 
-                if (rotationAxis != null || inputActions.Player.DeviceGrab.triggered) {
+                if (rotationAxis != null || inputActions.Player.DeviceGrab.triggered && !mouseOnGui) {
                     simulator.rootSpace.removeDevice(hoveredDevice);
 
                     if (rotationAxis != null) {
                         hoveredDevice.userActionRotate(rotationAxis.Value);
                     }
 
-                    if (inputActions.Player.DeviceGrab.triggered) {
+                    if (inputActions.Player.DeviceGrab.triggered && !mouseOnGui) {
                         grabbedDevice = hoveredDevice;
                     }
 

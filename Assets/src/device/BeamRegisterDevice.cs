@@ -73,10 +73,10 @@ namespace device {
 
         public override void render() {
             base.render();
-            D.raw(new Bounds(new float3(gridPos) + direction.float3(0.75f), new float3(0.1f)), Color.red);
-            D.raw(new Bounds(new float3(gridPos) + direction.float3(-0.75f), new float3(0.1f)), Color.green);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + direction.float3(0.75f), new float3(0.1f)), Color.red);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + direction.float3(-0.75f), new float3(0.1f)), Color.green);
             if (condition()) {
-                D.raw(new Bounds(new float3(gridPos), new float3(1.8f)), Color.green);
+                DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos), new float3(1.8f)), Color.green);
             }
         }
 

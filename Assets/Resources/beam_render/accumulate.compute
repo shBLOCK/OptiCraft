@@ -1,0 +1,87 @@
+#pragma kernel CSMain
+
+// For an angle theta, step through the pixel grid of the beam image starting from uRayOrigin, accumulating pixel values.
+// After a certain distance, store the current accumulated value into the accumulator texture.
+
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
+#include "Assets/assets/shader_include/beam_image.hlsl"
+#include "beam_render_utils.hlsl"
+
+SamplerState PointClampSampler;
+Texture2D uBeamImage;
+int2 uBeamImageOrigin;
+int4 uBeamImageBasisPacked;
+int2 uBeamImageSize;
+float4 uBeamImageModulation;
+float4 uBeamImageBias;
+
+// U axis represents accumulation depth; V axis represents an angle within uRayAngleRange.
+RWTexture2D<float4> uAccumulatorTexture;
+float2 uRayOrigin;
+float2 uRayAngleRange;
+float2 uBeamSize;
+
+[numthreads(1,32,1)]
+void CSMain(uint3 id : SV_DispatchThreadID) {
+    uint2 uAccumulatorTextureSize;
+    uAccumulatorTexture.GetDimensions(uAccumulatorTextureSize.x, uAccumulatorTextureSize.y);
+    if (id.y >= uAccumulatorTextureSize.y) return;
+    float rayAngle = Remap(
+        0.0, uAccumulatorTextureSize.y - 1.0,
+        uRayAngleRange.x, uRayAngleRange.y,
+        id.y
+    );
+
+    float2 rayDir;
+    sincos(rayAngle, rayDir.y, rayDir.x);
+
+    // TODO: actually do proper pixel grid stepping
+    RayRectIntersection rayRect = rayRectIntersect(uRayOrigin, rayDir, uBeamSize * 0.5);
+    if (isinf(rayRect.enterDist)) return;
+
+    int2x2 uBeamImageBasis = transpose(int2x2(uBeamImageBasisPacked.xy, uBeamImageBasisPacked.zw));
+
+    float recordStepLen = length(uBeamSize) / float(uAccumulatorTextureSize.x - 1);
+    float4 acc;
+    PixelGridWalker walker = initPixelGridWalker(
+        uRayOrigin + uBeamSize * 0.5 + rayDir * rayRect.enterDist,
+        rayDir,
+        uBeamSize / float2(uBeamImageSize)
+    );
+    float depth = 0.0;
+    float recordStepAcc = 0.0;
+    uint uAccumulatorTextureU = 0;
+    for (int i = 0; i < 1000; ++i) {
+        float pixelStepLen = stepPixelGridWalker(walker);
+        if (any(walker.pixel < 0) || any(walker.pixel >= uBeamImageSize)) break;
+        int2 pixelCoord = uBeamImageOrigin + mul(uBeamImageBasis, walker.pixel);
+        float4 pixelColor = uBeamImage.Load(int3(pixelCoord, 0)) * uBeamImageModulation + uBeamImageBias;
+        pixelColor = float4(
+            SanitizeFinite(pixelColor.r),
+            SanitizeFinite(pixelColor.g),
+            SanitizeFinite(pixelColor.b),
+            SanitizeFinite(pixelColor.a)
+        );
+        // acc += pixelColor * stepLen; // TODO: fade by distance
+        float partialPixelStepLen = 0.0;
+        while (partialPixelStepLen != pixelStepLen) {
+            float stepLen = recordStepLen - recordStepAcc;
+            if (partialPixelStepLen + stepLen < pixelStepLen) {
+                partialPixelStepLen += stepLen;
+                recordStepAcc = 0.0;
+            } else {
+                stepLen = pixelStepLen - partialPixelStepLen;
+                partialPixelStepLen = pixelStepLen;
+                recordStepAcc += stepLen;
+            }
+
+            acc += pixelColor * stepLen;
+            depth += stepLen;
+            if (recordStepAcc == 0.0) {
+                uAccumulatorTextureU++;
+                uAccumulatorTexture[uint2(uAccumulatorTextureU, id.y)] = acc;
+            }
+        }
+    }
+    uAccumulatorTexture[uint2(min(uAccumulatorTextureU + 1, uAccumulatorTextureSize.x - 1), id.y)] = acc;
+}

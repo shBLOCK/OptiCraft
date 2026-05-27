@@ -1,9 +1,11 @@
-﻿#define DECLARE_BEAM_IMAGE(name) \
-    Texture2D name; \
-    float4 name##TransformPacked; \
-    float2 name##Offset; \
-    float4 name##Modulation; \
-    float4 name##Bias;
+﻿#pragma once
+
+#define DECLARE_BEAM_IMAGE(name) \
+    uniform Texture2D name; \
+    uniform float4 name##TransformPacked; \
+    uniform float2 name##Offset; \
+    uniform float4 name##Modulation; \
+    uniform float4 name##Bias;
 
 #define sampleBeamImage(name, uv, samplar) _sampleBeamImage( \
     name, samplar, \

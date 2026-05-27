@@ -9,7 +9,7 @@ using Vertx.Debugging;
 
 namespace device {
     public abstract class SimpleGridDevice : OCDevice {
-        protected int3 gridPos { get; private set; }
+        public int3 gridPos { get; private set; }
 
         public override void onAdded(SimSpace simSpace) {
             base.onAdded(simSpace);
@@ -40,7 +40,7 @@ namespace device {
 
         protected void _tmpDrawBox(Color color) {
             var pos = getRenderPosWithAnimation();
-            D.raw(new Bounds(pos, new float3(1.5f)), color);
+            DebugUtils.drawBoundsWireframe(new Bounds(pos, new float3(1.5f)), color);
             D.raw(new Shape.Text(pos, TYPE.id, Camera.main), Color.gray);
         }
 

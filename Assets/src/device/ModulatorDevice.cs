@@ -138,8 +138,8 @@ namespace device {
 
         public override void render() {
             base.render();
-            D.raw(new Bounds(new float3(gridPos), modulatingAxis.float3(1.5f) + 0.1f), Color.green);
-            D.raw(new Bounds(new float3(gridPos), modulatorAxis.float3(1.5f) + 0.1f), Color.red);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos), modulatingAxis.float3(1.5f) + 0.1f), Color.green);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos), modulatorAxis.float3(1.5f) + 0.1f), Color.red);
         }
 
         public override void reset() {

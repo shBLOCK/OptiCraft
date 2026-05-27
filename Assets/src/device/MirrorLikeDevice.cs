@@ -35,8 +35,8 @@ namespace device {
         }
 
         protected void _tmpDrawIO() {
-            D.raw(new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)), Color.red);
-            D.raw(new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)), Color.green);
+            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)), Color.red);
+            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)), Color.green);
         }
 
         private AxisDirection anim_rotAxis;

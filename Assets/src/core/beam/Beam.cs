@@ -20,7 +20,7 @@ namespace core.beam {
         public int3 headPos => tailPos.offset(direction, length);
 
         [Flags]
-        private enum BeamFlags : byte {
+        private enum BeamFlags : ushort {
             BeingEmitted = 1 << 0,
             BeingConsumed = 1 << 1,
             RedChannelEmpty = 1 << 2, // TODO

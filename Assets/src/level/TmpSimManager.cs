@@ -31,9 +31,16 @@ namespace level {
         }
 
         private string saveFileName = DateTime.Now.ToString("MM-dd_HH-mm-ss");
+
+        private float _speedSlider = 1f;
         
         public void _OnGUI() {
             GUILayout.Label($"Tick: {simulator.tickNumber - 1 + simulator.partialTick:F2}");
+            
+            _speedSlider = GUILayout.HorizontalSlider(_speedSlider, 0, 6);
+            speed = math.pow(10f, _speedSlider);
+            GUILayout.Label($"Speed: {speed:F1}tick/s");
+            
             GUILayout.BeginHorizontal();
             running = GUILayout.RepeatButton("Run");
             if (GUILayout.Button("Reset")) {

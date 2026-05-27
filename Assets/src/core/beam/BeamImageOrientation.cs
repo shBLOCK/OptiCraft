@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Runtime.CompilerServices;
+using Unity.Mathematics;
 using utils;
 
 namespace core.beam {
@@ -73,5 +74,13 @@ namespace core.beam {
             this BeamImageOrientation orientation,
             AxisDirection inDir, AxisDirection outDir
         ) => orientation.reflect(inDir.opposite(), outDir);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static (int2 x, int2 y) int2Basis(this BeamImageOrientation orientation) {
+            var (xVal, yVal) = (orientation.xSign().intValue(), orientation.ySign().intValue());
+            return orientation.isXYSwapped()
+                ? (new int2(0, xVal), new int2(yVal, 0))
+                : (new int2(xVal, 0), new int2(0, yVal));
+        }
     }
 }

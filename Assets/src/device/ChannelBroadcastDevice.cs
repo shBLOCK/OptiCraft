@@ -95,7 +95,7 @@ namespace device {
 
         public override void render() {
             base.render();
-            D.raw(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.white);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos), axis.float3(1.5f) + 0.1f), Color.white);
         }
 
         private static readonly OCDeviceType<ChannelBroadcastDevice> _TYPE = new("channel_broadcast");

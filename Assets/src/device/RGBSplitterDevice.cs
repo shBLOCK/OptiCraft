@@ -68,11 +68,11 @@ namespace device {
 
         public override void render() {
             base.render();
-            D.raw(new Bounds(new float3(gridPos) + redDirection.float3(0.75f), new float3(0.1f)), Color.red);
-            D.raw(new Bounds(new float3(gridPos) + inputDirection.opposite().float3(0.75f), new float3(0.1f)),
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + redDirection.float3(0.75f), new float3(0.1f)), Color.red);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + inputDirection.opposite().float3(0.75f), new float3(0.1f)),
                 Color.green);
-            D.raw(new Bounds(new float3(gridPos) + redDirection.opposite().float3(0.75f), new float3(0.1f)), Color.blue);
-            D.raw(new Bounds(new float3(gridPos) + inputDirection.float3(0.75f), new float3(0.1f)), Color.white);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + redDirection.opposite().float3(0.75f), new float3(0.1f)), Color.blue);
+            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + inputDirection.float3(0.75f), new float3(0.1f)), Color.white);
         }
 
         public override void userActionRotate(AxisDirection axis) {

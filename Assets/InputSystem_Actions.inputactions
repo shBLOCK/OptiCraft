@@ -261,7 +261,7 @@
                 {
                     "name": "",
                     "id": "63cca099-3489-4a2d-b012-a65ba571e5a8",
-                    "path": "<Keyboard>/g",
+                    "path": "<Mouse>/leftButton",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -273,6 +273,17 @@
                     "name": "",
                     "id": "782c854a-3ab4-4d00-bc7c-83aff42b27ca",
                     "path": "<Keyboard>/delete",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "DeviceDelete",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d81644d0-24c6-46c1-857c-67036d7e718b",
+                    "path": "<Keyboard>/escape",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
