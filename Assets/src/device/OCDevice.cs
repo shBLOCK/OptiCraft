@@ -40,11 +40,22 @@ namespace device {
         public virtual void tick() { }
 
         public virtual void onBeamHit(ref Beam beam) { }
-        public virtual void onBeamHitEdge(ref Beam beam) { }
+
+        // public virtual void onBeamHitEdge(ref Beam beam) { }
         public virtual void onBeamEnd(ref Beam beam) { }
-        public virtual void onBeamEndEdge(ref Beam beam) { }
+        // public virtual void onBeamEndEdge(ref Beam beam) { }
 
         public virtual void render() { }
+
+        public virtual void beamRendering_addClipPlanes(
+            in Beam beam,
+            AxisDirection direction, // the direction at which the beam is interacting with the device (opposite of the face of the device that the beam is on)
+            float3 endPos, // interpolated beam end pos (beam end can be either head or tail)
+            List<Vector4> clipPlanesData
+        ) {
+            clipPlanesData.Add(endPos.f4());
+            clipPlanesData.Add(direction.float3().f4());
+        }
 
         public abstract Bounds getVisualBox();
 

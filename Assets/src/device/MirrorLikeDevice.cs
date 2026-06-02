@@ -1,22 +1,12 @@
 ﻿using System;
 using System.Text.Json.Nodes;
-using core;
-using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 using utils;
-using Vertx.Debugging;
 
 namespace device {
     public abstract class MirrorLikeDevice : SimpleGridDevice {
         protected MirrorDirection mirrorDir = MirrorDirection.PosXNegZ;
-
-        public override void onBeamHitEdge(ref Beam beam) {
-            if (beam.direction.axis() != mirrorDir.dirA().axis() && beam.direction.axis() != mirrorDir.dirB().axis()) {
-                space.consumeBeam(ref beam);
-            }
-        }
 
         protected override JsonObject saveData() {
             var data = base.saveData();

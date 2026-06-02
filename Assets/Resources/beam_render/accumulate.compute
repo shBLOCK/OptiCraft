@@ -17,8 +17,8 @@ float4 uBeamImageBias;
 
 // U axis represents accumulation depth; V axis represents an angle within uRayAngleRange.
 RWTexture2D<float4> uAccumulatorTexture;
-float2 uRayOrigin;
-float2 uRayAngleRange;
+float2 uViewRayOriginOnBeamBasis;
+float2 uViewRayAngleRange;
 float2 uBeamSize;
 
 [numthreads(1,32,1)]
@@ -28,30 +28,30 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     if (id.y >= uAccumulatorTextureSize.y) return;
     float rayAngle = Remap(
         0.0, uAccumulatorTextureSize.y - 1.0,
-        uRayAngleRange.x, uRayAngleRange.y,
+        uViewRayAngleRange.x, uViewRayAngleRange.y,
         id.y
     );
 
     float2 rayDir;
     sincos(rayAngle, rayDir.y, rayDir.x);
-
-    // TODO: actually do proper pixel grid stepping
-    RayRectIntersection rayRect = rayRectIntersect(uRayOrigin, rayDir, uBeamSize * 0.5);
-    if (isinf(rayRect.enterDist)) return;
+    
+    RayRectIntersection rayRectIntersection = rayRectIntersect(uViewRayOriginOnBeamBasis, rayDir, uBeamSize * 0.5);
+    if (isinf(rayRectIntersection.enterDist)) return;
 
     int2x2 uBeamImageBasis = transpose(int2x2(uBeamImageBasisPacked.xy, uBeamImageBasisPacked.zw));
 
     float recordStepLen = length(uBeamSize) / float(uAccumulatorTextureSize.x - 1);
     float4 acc;
     PixelGridWalker walker = initPixelGridWalker(
-        uRayOrigin + uBeamSize * 0.5 + rayDir * rayRect.enterDist,
+        uViewRayOriginOnBeamBasis + uBeamSize * 0.5 + rayDir * max(0.0, rayRectIntersection.enterDist),
         rayDir,
         uBeamSize / float2(uBeamImageSize)
     );
     float depth = 0.0;
     float recordStepAcc = 0.0;
     uint uAccumulatorTextureU = 0;
-    for (int i = 0; i < 1000; ++i) {
+    uAccumulatorTexture[uint2(0, id.y)] = 0.0; // always set first column to zero
+    for (int i = 0; i < 10000; ++i) {
         float pixelStepLen = stepPixelGridWalker(walker);
         if (any(walker.pixel < 0) || any(walker.pixel >= uBeamImageSize)) break;
         int2 pixelCoord = uBeamImageOrigin + mul(uBeamImageBasis, walker.pixel);
@@ -62,11 +62,12 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
             SanitizeFinite(pixelColor.b),
             SanitizeFinite(pixelColor.a)
         );
+        pixelColor = max(0.0, pixelColor);
         // acc += pixelColor * stepLen; // TODO: fade by distance
         float partialPixelStepLen = 0.0;
         while (partialPixelStepLen != pixelStepLen) {
             float stepLen = recordStepLen - recordStepAcc;
-            if (partialPixelStepLen + stepLen < pixelStepLen) {
+            if (partialPixelStepLen + stepLen < pixelStepLen) { // enough to finish a full step
                 partialPixelStepLen += stepLen;
                 recordStepAcc = 0.0;
             } else {
@@ -83,5 +84,9 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
             }
         }
     }
-    uAccumulatorTexture[uint2(min(uAccumulatorTextureU + 1, uAccumulatorTextureSize.x - 1), id.y)] = acc;
+    
+    // buffer zone
+    for (int i = 0; i < 3; i++) {
+        uAccumulatorTexture[uint2(min(uAccumulatorTextureU + i, uAccumulatorTextureSize.x - 1), id.y)] = acc;
+    }
 }

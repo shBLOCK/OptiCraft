@@ -1,15 +1,6 @@
 Shader "Custom/volumetric_beam" {
     Properties {
         [KeywordEnum(SINGLE_PIXEL, ACCUMULATOR_TEXTURE)] KW_MODE("KW_MODE", Integer) = 0
-
-        [HideInInspector] uBeamDir("uBeamDir", Vector) = (1, 0, 0, 0)
-        [HideInInspector] uBeamBasisX("uBeamBasisX", Vector) = (1, 0, 0, 0)
-        [HideInInspector] uBeamBasisY("uBeamBasisY", Vector) = (0, 1, 0, 0)
-        [HideInInspector] uBeamSize("uBeamSize", Vector) = (1, 1, 0, 0)
-        [HideInInspector] uViewRayOriginOnBeamBasis("uViewRayOriginOnBeamBasis", Vector) = (0, 0, 0, 0)
-        [HDR] uAccumulatorTexture("uAccumulatorTexture", 2D) = "white" {}
-        [HideInInspector] uAccumulatorAngleRange("uAccumulatorAngleRange", Vector) = (0, 0, 0, 0)
-        [HideInInspector] uBeamColor("uBeamColor", Vector) = (0, 0, 0, 0)
     }
 
     SubShader {
@@ -24,6 +15,7 @@ Shader "Custom/volumetric_beam" {
         //TODO: render beams to separate framebuffer (with alpha value) and blit to screen
         BlendOp Add
         Blend One One, Zero One
+        ZTest Always
         ZWrite Off
         Offset -1, 0
 
@@ -52,12 +44,16 @@ Shader "Custom/volumetric_beam" {
             float3 uBeamBasisY;
             float2 uBeamSize;
             float2 uViewRayOriginOnBeamBasis;
-            // float4 uClipPlanes[4]; // xyz: normal; w: position along normal
+            /// Each plane is represented by 2 vectors: (position, normal)
+            float3 uClipPlanes[8];
+            uint uClipPlanesCount;
 
             #ifdef KW_MODE_ACCUMULATOR_TEXTURE
             Texture2D uAccumulatorTexture;
             SamplerState LinearClampSampler;
-            float2 uAccumulatorAngleRange;
+            SamplerState PointClampSampler;
+            float2 uViewRayAngleRange;
+            float uViewRayAngleRangeOffset; // offset of the angle range from base range of [-pi, pi]
             #endif
 
             #ifdef KW_MODE_SINGLE_PIXEL
@@ -76,7 +72,7 @@ Shader "Custom/volumetric_beam" {
                 float sgn = sign(value);
                 value = abs(value);
                 if (value > 1.0) {
-                    value = 1.0 + (1.0 - exp(-value / range)) * range;
+                    value = 1.0 + (1.0 - exp(-(value - 1.0) / range)) * range;
                 }
                 return value * sgn;
             }
@@ -90,38 +86,100 @@ Shader "Custom/volumetric_beam" {
                 );
             }
 
+            float sqr(float x) { return x * x; }
+
             float4 frag(Varyings IN) : SV_Target {
-                float3 viewDir = -GetWorldSpaceNormalizeViewDir(IN.positionWS);
-                float2 viewDirOnBeamBasis = normalize(float2(dot(viewDir, uBeamBasisX), dot(viewDir, uBeamBasisY)));
+                float3 viewOrigin = GetCurrentViewPosition();
+                float3 viewDir = normalize(IN.positionWS - viewOrigin);
+                float2 viewRayOnBeamBasis = normalize(float2(dot(viewDir, uBeamBasisX), dot(viewDir, uBeamBasisY)));
                 RayRectIntersection rayRectIntersection = rayRectIntersect(
-                    uViewRayOriginOnBeamBasis, viewDirOnBeamBasis, uBeamSize * 0.5);
-                if (isinf(rayRectIntersection.enterDist)) return float4(1.0, 0.0, 1.0, 0.0);
+                    uViewRayOriginOnBeamBasis, viewRayOnBeamBasis, uBeamSize * 0.5);
+                if (isinf(rayRectIntersection.enterDist)) discard;
+                // depth here means DISTANCE to something, not view-space Z value!
+                // "2D depth": measured on the cross-section plane of the beam
+                // eye depth: zero point is at camera pos (normal depth)
+                // beam depth: zero point is the point at which view ray enter the beam (basically this measures the penetrtaion depth into the beam)
+                float depth2Dto3D = rsqrt(1.0 - sqr(dot(viewDir, uBeamDir)));
+                depth2Dto3D = min(depth2Dto3D, 1e30);
+                float eyeDepth3D_sceneDepth = LinearEyeDepth(
+                    LoadSceneDepth(uint2(IN.positionHCS.xy)),
+                    _ZBufferParams
+                ) / dot(viewDir, GetViewForwardDir());
+                float eyeDepth3D_beamEnter = max(0.0, rayRectIntersection.enterDist) * depth2Dto3D;
+                if (eyeDepth3D_sceneDepth < eyeDepth3D_beamEnter) discard;
+                float eyeDepth3D_beamExit = rayRectIntersection.exitDist * depth2Dto3D;
+                eyeDepth3D_beamExit = min(eyeDepth3D_sceneDepth, eyeDepth3D_beamExit);
+
+                // clip planes
+                for (uint i = 0; i < min(4,uClipPlanesCount * 2); i += 2) {
+                    float3 planePos = uClipPlanes[i];
+                    float3 planeNormal = uClipPlanes[i + 1];
+                    float backFrontSign = sign(dot(planeNormal, viewDir)); // 1 for back, -1 for front
+                    float eyeDepth3D_planeIntersection =
+                        dot(planePos - viewOrigin, planeNormal) / dot(planeNormal, viewDir);
+                    if (backFrontSign < 0.0) { // front
+                        eyeDepth3D_beamEnter = max(eyeDepth3D_beamEnter, eyeDepth3D_planeIntersection);
+                    } else { // back
+                        eyeDepth3D_beamExit = min(eyeDepth3D_beamExit, eyeDepth3D_planeIntersection);
+                    }
+                }
+
+                if (eyeDepth3D_beamEnter >= eyeDepth3D_beamExit) discard;
+
                 float4 beamColor = 0.0;
                 #ifdef KW_MODE_ACCUMULATOR_TEXTURE
                 {
-                    float viewDirOnBeamPlaneAngle = atan2(viewDirOnBeamBasis.y, viewDirOnBeamBasis.x);
+                    float viewRayOnBeamPlaneAngle = atan2(viewRayOnBeamBasis.y, viewRayOnBeamBasis.x) +
+                        uViewRayAngleRangeOffset;
                     float2 uAccumulatorTextureSize;
                     uAccumulatorTexture.GetDimensions(uAccumulatorTextureSize.x, uAccumulatorTextureSize.y);
                     float2 uAccumulatorTextureHalfTexel = 0.5 / uAccumulatorTextureSize;
                     float uAccumulatorSampleV = Remap(
-                        uAccumulatorAngleRange.x, uAccumulatorAngleRange.y,
+                        uViewRayAngleRange.x, uViewRayAngleRange.y,
                         uAccumulatorTextureHalfTexel.y, 1.0 - uAccumulatorTextureHalfTexel.y,
-                        viewDirOnBeamPlaneAngle
+                        viewRayOnBeamPlaneAngle
                     );
 
-                    float uAccumulatorSampleU = Remap(
-                        0, length(uBeamSize),
-                        uAccumulatorTextureHalfTexel.x, 1.0 - uAccumulatorTextureHalfTexel.x,
-                        rayRectIntersection.exitDist - rayRectIntersection.enterDist
+                    float2 beamDepth2D_range = float2(0.0, length(uBeamSize));
+                    float eyeDepth3DToBeamDepth3DOffset = max(0.0, rayRectIntersection.enterDist) * depth2Dto3D;
+                    float beamDepth3D_beamEnter = eyeDepth3D_beamEnter - eyeDepth3DToBeamDepth3DOffset;
+                    float beamDepth3D_beamExit = eyeDepth3D_beamExit - eyeDepth3DToBeamDepth3DOffset;
+                    beamColor = uAccumulatorTexture.SampleLevel(
+                        LinearClampSampler,
+                        float2(
+                            Remap(
+                                beamDepth2D_range.x, beamDepth2D_range.y,
+                                uAccumulatorTextureHalfTexel.x, 1.0 - uAccumulatorTextureHalfTexel.x,
+                                beamDepth3D_beamExit / depth2Dto3D
+                            ),
+                            uAccumulatorSampleV
+                        ),
+                        0
                     );
-                    beamColor = uAccumulatorTexture.
-                        SampleLevel(LinearClampSampler, float2(uAccumulatorSampleU, uAccumulatorSampleV), 0);
+                    if (beamDepth3D_beamEnter > 0.0) {
+                        beamColor -= uAccumulatorTexture.SampleLevel(
+                            LinearClampSampler,
+                            float2(
+                                Remap(
+                                    beamDepth2D_range.x, beamDepth2D_range.y,
+                                    uAccumulatorTextureHalfTexel.x, 1.0 - uAccumulatorTextureHalfTexel.x,
+                                    beamDepth3D_beamEnter / depth2Dto3D
+                                ),
+                                uAccumulatorSampleV
+                            ),
+                            0
+                        );
+                    }
+
+                    beamColor *= depth2Dto3D;
                 }
                 #elif defined(KW_MODE_SINGLE_PIXEL)
                 {
-                    beamColor = uBeamColor * (rayRectIntersection.exitDist - rayRectIntersection.enterDist);
+                    beamColor = uBeamColor * (eyeDepth3D_beamExit - eyeDepth3D_beamEnter);
                 }
                 #endif
+
+                // beamColor *= log(depth2Dto3D + 1.0);
 
                 beamColor = saturateBeamColor(beamColor, 3.0);
 

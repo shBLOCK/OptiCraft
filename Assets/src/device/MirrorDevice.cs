@@ -1,8 +1,6 @@
 ﻿using System.Text.Json.Nodes;
-using core;
 using core.beam;
 using UnityEngine;
-using UnityEngine.Rendering;
 using utils;
 
 namespace device {

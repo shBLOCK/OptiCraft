@@ -16,22 +16,26 @@ namespace core.beam {
         public int3 tailPos { get; private set; }
         public ushort id { get; internal set; }
         public readonly AxisDirection direction;
-        public ushort length;
+        public int length; // TODO: ushort?
         public int3 headPos => tailPos.offset(direction, length);
 
         [Flags]
         private enum BeamFlags : ushort {
             BeingEmitted = 1 << 0,
             BeingConsumed = 1 << 1,
-            RedChannelEmpty = 1 << 2, // TODO
-            GreenChannelEmpty = 1 << 3,
-            BlueChannelEmpty = 1 << 4,
-            UVChannelEmpty = 1 << 5,
+            WasBeingEmitted = 1 << 2,
+            WasBeingConsumed = 1 << 3,
+            RedChannelEmpty = 1 << 4, // TODO
+            GreenChannelEmpty = 1 << 5,
+            BlueChannelEmpty = 1 << 6,
+            UVChannelEmpty = 1 << 7,
         }
 
         private BeamFlags flags;
         public bool beingEmitted => (flags & BeamFlags.BeingEmitted) == BeamFlags.BeingEmitted;
         public bool beingConsumed => (flags & BeamFlags.BeingConsumed) == BeamFlags.BeingConsumed;
+        public bool wasBeingEmitted => (flags & BeamFlags.WasBeingEmitted) == BeamFlags.WasBeingEmitted;
+        public bool wasBeingConsumed => (flags & BeamFlags.WasBeingConsumed) == BeamFlags.WasBeingConsumed;
 
         public readonly BeamImage image;
 
@@ -86,6 +90,9 @@ namespace core.beam {
 
             if (beingEmitted) length++;
             if (beingConsumed) length--;
+
+            // copy beingEmitted/Consumed to wasBeingEmitted/Consumed
+            flags = (BeamFlags)(((ushort)flags & ~0b1100) | (((ushort)flags & 0b11) << 2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

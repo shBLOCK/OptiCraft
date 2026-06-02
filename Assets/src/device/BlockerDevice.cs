@@ -26,7 +26,8 @@ namespace device {
                 if (id != Beam.INVALID_ID) space.stopConsumeBeam(id);
             }
 
-            reset();
+            consumingBeams.fill(Beam.INVALID_ID);
+            
             base.onRemoved();
         }
 

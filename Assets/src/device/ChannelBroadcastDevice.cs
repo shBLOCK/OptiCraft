@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Text.Json.Nodes;
-using core;
 using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 using utils;
-using Vertx.Debugging;
 
 namespace device {
     public class ChannelBroadcastDevice : SimpleGridDevice {
@@ -52,12 +49,6 @@ namespace device {
 
         public override void onBeamEnd(ref Beam beam) {
             space.stopEmitBeam(beams[beam.direction.sign()].output);
-        }
-
-        public override void onBeamHitEdge(ref Beam beam) {
-            if (beam.direction.axis() != axis) {
-                space.consumeBeam(ref beam);
-            }
         }
 
         public override void onRemoved() {

@@ -5,6 +5,7 @@ struct RayRectIntersection {
     float exitDist;
 };
 
+/// enterDist may be negative when origin is inside the rect
 RayRectIntersection rayRectIntersect(float2 origin, float2 dir, float2 rectHalfSize) {
     RayRectIntersection result;
     result.enterDist = 1.#INF;
@@ -33,7 +34,7 @@ RayRectIntersection rayRectIntersect(float2 origin, float2 dir, float2 rectHalfS
 
     if (!hit) return result;
 
-    result.enterDist = inside ? 0.0 : max(enter, 0.0);
+    result.enterDist = enter;
     result.exitDist = exit;
 
     return result;

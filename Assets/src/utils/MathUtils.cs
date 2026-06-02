@@ -52,5 +52,11 @@ namespace utils {
             to = to.projectplane(axis);
             return quaternion.AxisAngle(axis, mathx.signedangle(from, to, axis));
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float min(float a, float b, float c) => math.min(math.min(a, b), c);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float max(float a, float b, float c) => math.max(math.max(a, b), c);
     }
 }

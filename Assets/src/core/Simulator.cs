@@ -19,7 +19,6 @@ namespace core {
         }
 
         public void tick() {
-            tickNumber++;
             Debug.Log($"tick {tickNumber}");
             
             cmds.Clear();
@@ -28,6 +27,8 @@ namespace core {
             //TODO: maybe manage this somewhere else
             Graphics.ExecuteCommandBuffer(cmds);
             cmds.Clear();
+            
+            tickNumber++;
         }
 
         public void reset() {

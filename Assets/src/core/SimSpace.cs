@@ -45,20 +45,27 @@ namespace core {
             }
         }
 
-        public void tick() {
+        private void tick_tickBeams() {
+            for (int i = 0; i < beams.Length; i++) {
+                ref var beam = ref beams.ElementAt(i);
+                if (!beam.isValid) continue;
+                beam.tick();
+            }
+        }
+
+        private void tick_beamDeviceInteraction() {
             // beam-device interaction: remove ended beams
             for (int i = 0; i < beams.Length; i++) {
                 ref var beam = ref beams.ElementAt(i);
                 if (!beam.isValid) continue;
-                if (!beam.beingEmitted && beam.length <= 0) {
-                    getDeviceAt(beam.headPos)?.onBeamEnd(ref beam);
-                    if (GridUtils.isGridEdge(beam.headPos)) {
-                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamEndEdge(ref beam);
+                if (!beam.beingEmitted) {
+                    if (beam.length == 0) {
+                        getDeviceAt(beam.headPos)?.onBeamEnd(ref beam);
+                    } else if (beam.length <= -1) { // keep beam around for one more tick for rendering
+                        beamsFreeSlots.Push(beam.id);
+                        beam._end(simulator.beamImageDataManager);
+                        onBeamRemoved?.Invoke(beam);
                     }
-
-                    beamsFreeSlots.Push(beam.id);
-                    beam._end(simulator.beamImageDataManager);
-                    onBeamRemoved?.Invoke(beam);
                 }
             }
 
@@ -68,18 +75,17 @@ namespace core {
                 if (!beam.isValid) continue;
                 if (!beam.beingConsumed) {
                     getDeviceAt(beam.headPos)?.onBeamHit(ref beam);
-                    if (GridUtils.isGridEdge(beam.headPos)) {
-                        getDeviceAt(beam.headPos.offset(beam.direction))?.onBeamHitEdge(ref beam);
-                    }
                 }
             }
+        }
 
-            // tick devices
+        private void tick_tickDevices() {
             foreach (var device in devices) {
                 device.tick();
             }
+        }
 
-            // emit staged beams
+        private void tick_emitStagedBeams() {
             foreach (var beam in beamsStaging) {
                 beams[beam.id] = beam;
             }
@@ -90,13 +96,13 @@ namespace core {
 
             beamsStaging.Clear();
             beamsStagingExtra.Clear();
+        }
 
-            // tick beams
-            for (int i = 0; i < beams.Length; i++) {
-                ref var beam = ref beams.ElementAt(i);
-                if (!beam.isValid) continue;
-                beam.tick();
-            }
+        public void tick() {
+            tick_tickBeams();
+            tick_beamDeviceInteraction();
+            tick_tickDevices();
+            tick_emitStagedBeams();
         }
 
         public void addDevice(OCDevice device) {

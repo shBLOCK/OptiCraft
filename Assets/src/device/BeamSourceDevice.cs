@@ -1,27 +1,26 @@
 ﻿using System;
 using System.Text.Json.Nodes;
-using core;
 using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 using utils;
 
 namespace device {
-    public sealed class BeamSourceDevice : SimpleGridDevice {
+    public sealed class BeamSourceDevice : BlockerDevice {
         private AxisDirection direction = AxisDirection.PosZ;
         public string imagePath = null;
         public Texture2D image = null;
         public float4 color = 1f;
 
-        private ushort beam = Beam.INVALID_ID;
+        private ushort emittingBeam = Beam.INVALID_ID;
 
         public override void reset() {
-            beam = Beam.INVALID_ID;
+            base.reset();
+            emittingBeam = Beam.INVALID_ID;
         }
 
         public override void tick() {
-            if (beam == Beam.INVALID_ID) {
+            if (emittingBeam == Beam.INVALID_ID) {
                 BeamImage beamImage;
                 if (imagePath != null && !image) {
                     image = Resources.Load<Texture2D>(imagePath); //TODO: tmp
@@ -34,14 +33,18 @@ namespace device {
                     beamImage = new BeamImage(data.id, data.size, BeamImageOrientation.PosXPosY, 0, color, 0f);
                 }
 
-                beam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;
+                emittingBeam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;
             }
+        }
+        
+        public override void onBeamHit(ref Beam beam) {
+            space.consumeBeam(ref beam);
         }
 
         public override void onRemoved() {
-            if (beam != Beam.INVALID_ID) {
-                space.stopEmitBeam(beam);
-                beam = Beam.INVALID_ID;
+            if (emittingBeam != Beam.INVALID_ID) {
+                space.stopEmitBeam(emittingBeam);
+                emittingBeam = Beam.INVALID_ID;
             }
 
             base.onRemoved();
@@ -81,7 +84,7 @@ namespace device {
         [RuntimeInitializeOnLoadMethod]
         private static void LOAD_MESH() {
             MESH = Resources.Load<Mesh>("BeamSourceDevice");
-            MATERIAL = Resources.Load<Material>("Green");
+            MATERIAL = Resources.Load<Material>("Gray");
         }
 
         public override void render() {
