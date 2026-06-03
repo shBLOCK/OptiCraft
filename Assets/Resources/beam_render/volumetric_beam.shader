@@ -51,9 +51,8 @@ Shader "Custom/volumetric_beam" {
             #ifdef KW_MODE_ACCUMULATOR_TEXTURE
             Texture2D uAccumulatorTexture;
             SamplerState LinearClampSampler;
-            SamplerState PointClampSampler;
             float2 uViewRayAngleRange;
-            float uViewRayAngleRangeOffset; // offset of the angle range from base range of [-pi, pi]
+            bool uViewRayAngleRangeInvertX;
             #endif
 
             #ifdef KW_MODE_SINGLE_PIXEL
@@ -111,7 +110,7 @@ Shader "Custom/volumetric_beam" {
                 eyeDepth3D_beamExit = min(eyeDepth3D_sceneDepth, eyeDepth3D_beamExit);
 
                 // clip planes
-                for (uint i = 0; i < min(4,uClipPlanesCount * 2); i += 2) {
+                for (uint i = 0; i < uClipPlanesCount * 2; i += 2) {
                     float3 planePos = uClipPlanes[i];
                     float3 planeNormal = uClipPlanes[i + 1];
                     float backFrontSign = sign(dot(planeNormal, viewDir)); // 1 for back, -1 for front
@@ -129,21 +128,24 @@ Shader "Custom/volumetric_beam" {
                 float4 beamColor = 0.0;
                 #ifdef KW_MODE_ACCUMULATOR_TEXTURE
                 {
-                    float viewRayOnBeamPlaneAngle = atan2(viewRayOnBeamBasis.y, viewRayOnBeamBasis.x) +
-                        uViewRayAngleRangeOffset;
                     float2 uAccumulatorTextureSize;
                     uAccumulatorTexture.GetDimensions(uAccumulatorTextureSize.x, uAccumulatorTextureSize.y);
                     float2 uAccumulatorTextureHalfTexel = 0.5 / uAccumulatorTextureSize;
+                    float viewRayOnBeamPlaneAngleRaw = atan2(
+                        viewRayOnBeamBasis.y,
+                        uViewRayAngleRangeInvertX ? -viewRayOnBeamBasis.x : viewRayOnBeamBasis.x
+                    );
                     float uAccumulatorSampleV = Remap(
                         uViewRayAngleRange.x, uViewRayAngleRange.y,
                         uAccumulatorTextureHalfTexel.y, 1.0 - uAccumulatorTextureHalfTexel.y,
-                        viewRayOnBeamPlaneAngle
+                        viewRayOnBeamPlaneAngleRaw
                     );
 
                     float2 beamDepth2D_range = float2(0.0, length(uBeamSize));
                     float eyeDepth3DToBeamDepth3DOffset = max(0.0, rayRectIntersection.enterDist) * depth2Dto3D;
                     float beamDepth3D_beamEnter = eyeDepth3D_beamEnter - eyeDepth3DToBeamDepth3DOffset;
                     float beamDepth3D_beamExit = eyeDepth3D_beamExit - eyeDepth3DToBeamDepth3DOffset;
+                    // beamDepth3D_beamExit = min(beamDepth3D_beamExit, beamDepth3D_beamEnter + 0.5);
                     beamColor = uAccumulatorTexture.SampleLevel(
                         LinearClampSampler,
                         float2(
@@ -172,6 +174,7 @@ Shader "Custom/volumetric_beam" {
                     }
 
                     beamColor *= depth2Dto3D;
+                    // beamColor *= log(beamDepth3D_beamExit - beamDepth3D_beamEnter + 1.0);
                 }
                 #elif defined(KW_MODE_SINGLE_PIXEL)
                 {
@@ -179,7 +182,7 @@ Shader "Custom/volumetric_beam" {
                 }
                 #endif
 
-                // beamColor *= log(depth2Dto3D + 1.0);
+                // beamColor *= log(depth2Dto3D * 10.0 + 1.0) / 10;
 
                 beamColor = saturateBeamColor(beamColor, 3.0);
 

@@ -19,6 +19,7 @@ float4 uBeamImageBias;
 RWTexture2D<float4> uAccumulatorTexture;
 float2 uViewRayOriginOnBeamBasis;
 float2 uViewRayAngleRange;
+bool uViewRayAngleRangeInvertX;
 float2 uBeamSize;
 
 [numthreads(1,32,1)]
@@ -26,14 +27,15 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     uint2 uAccumulatorTextureSize;
     uAccumulatorTexture.GetDimensions(uAccumulatorTextureSize.x, uAccumulatorTextureSize.y);
     if (id.y >= uAccumulatorTextureSize.y) return;
-    float rayAngle = Remap(
+    float rawRayAngle = Remap(
         0.0, uAccumulatorTextureSize.y - 1.0,
         uViewRayAngleRange.x, uViewRayAngleRange.y,
         id.y
     );
 
     float2 rayDir;
-    sincos(rayAngle, rayDir.y, rayDir.x);
+    sincos(rawRayAngle, rayDir.y, rayDir.x);
+    if (uViewRayAngleRangeInvertX) rayDir.x = -rayDir.x;
     
     RayRectIntersection rayRectIntersection = rayRectIntersect(uViewRayOriginOnBeamBasis, rayDir, uBeamSize * 0.5);
     if (isinf(rayRectIntersection.enterDist)) return;
@@ -76,7 +78,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
                 recordStepAcc += stepLen;
             }
 
-            acc += pixelColor * stepLen;
+            acc += pixelColor * stepLen * exp(-depth);
             depth += stepLen;
             if (recordStepAcc == 0.0) {
                 uAccumulatorTextureU++;

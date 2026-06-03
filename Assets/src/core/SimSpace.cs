@@ -45,6 +45,16 @@ namespace core {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void tick_preTickBeams() {
+            for (int i = 0; i < beams.Length; i++) {
+                ref var beam = ref beams.ElementAt(i);
+                if (!beam.isValid) continue;
+                beam.preTick();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void tick_tickBeams() {
             for (int i = 0; i < beams.Length; i++) {
                 ref var beam = ref beams.ElementAt(i);
@@ -53,6 +63,7 @@ namespace core {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void tick_beamDeviceInteraction() {
             // beam-device interaction: remove ended beams
             for (int i = 0; i < beams.Length; i++) {
@@ -61,7 +72,7 @@ namespace core {
                 if (!beam.beingEmitted) {
                     if (beam.length == 0) {
                         getDeviceAt(beam.headPos)?.onBeamEnd(ref beam);
-                    } else if (beam.length <= -1) { // keep beam around for one more tick for rendering
+                    } else if (beam.length <= -2) { // keep beam around for one more tick for rendering
                         beamsFreeSlots.Push(beam.id);
                         beam._end(simulator.beamImageDataManager);
                         onBeamRemoved?.Invoke(beam);
@@ -79,12 +90,14 @@ namespace core {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void tick_tickDevices() {
             foreach (var device in devices) {
                 device.tick();
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void tick_emitStagedBeams() {
             foreach (var beam in beamsStaging) {
                 beams[beam.id] = beam;
@@ -99,10 +112,11 @@ namespace core {
         }
 
         public void tick() {
-            tick_tickBeams();
+            tick_preTickBeams();
             tick_beamDeviceInteraction();
             tick_tickDevices();
             tick_emitStagedBeams();
+            tick_tickBeams();
         }
 
         public void addDevice(OCDevice device) {

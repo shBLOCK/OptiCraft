@@ -25,10 +25,12 @@ namespace core.beam {
             BeingConsumed = 1 << 1,
             WasBeingEmitted = 1 << 2,
             WasBeingConsumed = 1 << 3,
-            RedChannelEmpty = 1 << 4, // TODO
-            GreenChannelEmpty = 1 << 5,
-            BlueChannelEmpty = 1 << 6,
-            UVChannelEmpty = 1 << 7,
+            WasWasBeingEmitted = 1 << 4,
+            WasWasBeingConsumed = 1 << 5,
+            RedChannelEmpty = 1 << 6, // TODO
+            GreenChannelEmpty = 1 << 7,
+            BlueChannelEmpty = 1 << 8,
+            UVChannelEmpty = 1 << 9,
         }
 
         private BeamFlags flags;
@@ -36,6 +38,8 @@ namespace core.beam {
         public bool beingConsumed => (flags & BeamFlags.BeingConsumed) == BeamFlags.BeingConsumed;
         public bool wasBeingEmitted => (flags & BeamFlags.WasBeingEmitted) == BeamFlags.WasBeingEmitted;
         public bool wasBeingConsumed => (flags & BeamFlags.WasBeingConsumed) == BeamFlags.WasBeingConsumed;
+        public bool wasWasBeingEmitted => (flags & BeamFlags.WasWasBeingEmitted) == BeamFlags.WasWasBeingEmitted;
+        public bool wasWasBeingConsumed => (flags & BeamFlags.WasWasBeingConsumed) == BeamFlags.WasWasBeingConsumed;
 
         public readonly BeamImage image;
 
@@ -83,6 +87,12 @@ namespace core.beam {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void preTick() {
+            // update delayed beingEmitted/Consumed flags
+            flags = (BeamFlags)(((ushort)flags & ~0b111100) | (((ushort)flags & 0b1111) << 2));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void tick() {
             if (!beingEmitted) {
                 tailPos += direction.int3();
@@ -90,9 +100,6 @@ namespace core.beam {
 
             if (beingEmitted) length++;
             if (beingConsumed) length--;
-
-            // copy beingEmitted/Consumed to wasBeingEmitted/Consumed
-            flags = (BeamFlags)(((ushort)flags & ~0b1100) | (((ushort)flags & 0b11) << 2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,5 +118,10 @@ namespace core.beam {
         //     DebugUtils.printStructLayout<Beam>();
         //     DebugUtils.printStructLayout<BeamImage>();
         // }
+
+        public enum End : byte {
+            Tail,
+            Head
+        }
     }
 }

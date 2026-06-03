@@ -47,14 +47,17 @@ namespace device {
 
         public virtual void render() { }
 
-        public virtual void beamRendering_addClipPlanes(
+        public virtual void beamRendering_configureBeamEnd(
             in Beam beam,
-            AxisDirection direction, // the direction at which the beam is interacting with the device (opposite of the face of the device that the beam is on)
+            Beam.End beamEnd,
+            AxisDirection enterDir, // the direction at which the beam is interacting with the device (opposite of the face of the device that the beam is on)
             float3 endPos, // interpolated beam end pos (beam end can be either head or tail)
-            List<Vector4> clipPlanesData
+            List<Vector4> clipPlanesData,
+            out float boundsOffset
         ) {
             clipPlanesData.Add(endPos.f4());
-            clipPlanesData.Add(direction.float3().f4());
+            clipPlanesData.Add(enterDir.float3().f4());
+            boundsOffset = 0f;
         }
 
         public abstract Bounds getVisualBox();

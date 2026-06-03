@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.Json.Nodes;
+using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
 using utils;
@@ -24,9 +26,46 @@ namespace device {
             _tmpDrawIO();
         }
 
+        public override void beamRendering_configureBeamEnd(
+            in Beam beam, Beam.End beamEnd, AxisDirection enterDir, float3 endPos,
+            List<Vector4> clipPlanesData, out float boundsOffset
+        ) {
+            var axis = enterDir.axis();
+            if (axis == mirrorDir.dirA().axis() || axis == mirrorDir.dirB().axis()) {
+                var normal = mirrorDir.normal();
+                if (normal.dot(enterDir.float3()) < 0f) {
+                    normal = -normal;
+                }
+                clipPlanesData.Add(new float3(gridPos).f4());
+                clipPlanesData.Add(normal.f4());
+                
+                if (beamEnd == Beam.End.Tail) {
+                    boundsOffset = beam.beingEmitted ? 1f : 0f;
+                    if (beam.wasBeingEmitted && !beam.beingEmitted) {
+                        boundsOffset = 1f - space.simulator.partialTick;
+                    }
+                } else {
+                    boundsOffset = 0f;
+                    if (beam.wasBeingConsumed) {
+                        boundsOffset = beam.wasWasBeingConsumed ? 1f : space.simulator.partialTick;
+                    }
+                }
+
+                clipPlanesData.Add((endPos + enterDir.float3(boundsOffset)).f4());
+                clipPlanesData.Add(enterDir.float3().f4());
+            } else {
+                //TODO
+                clipPlanesData.Add(endPos.f4());
+                clipPlanesData.Add(enterDir.float3().f4());
+                boundsOffset = 0f;
+            }
+        }
+
         protected void _tmpDrawIO() {
-            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)), Color.red);
-            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)), Color.green);
+            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirA().float3(), new float3(0.2f)),
+                Color.red);
+            DebugUtils.drawBoundsWireframe(new Bounds(gridPos + mirrorDir.dirB().float3(), new float3(0.2f)),
+                Color.green);
         }
 
         private AxisDirection anim_rotAxis;

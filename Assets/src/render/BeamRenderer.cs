@@ -6,7 +6,6 @@ using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using utils;
-using Vertx.Debugging;
 
 namespace render {
     public class BeamRenderer : MonoBehaviour {
@@ -41,32 +40,39 @@ namespace render {
 
         private Beam? hoveringBeam;
 
-        private (float2 range, float offset) calcAngleRange(
+        private (float2 range, bool invertX) calcAngleRange(
             ReadOnlySpan<float2> corners,
             float2 viewRayOriginOnBeamBasis
         ) {
             if ((viewRayOriginOnBeamBasis.abs() <= beamSize * 0.5f).all()) {
                 // TODO: more aggressive (smaller) angle range
-                return (range: new float2(-math.PI, math.PI), offset: 0f);
+                return (range: new float2(-math.PI, math.PI), invertX: false);
             }
 
-            var angleRangeOffset = 0f;
-            var baseCornerRay = corners[0] - viewRayOriginOnBeamBasis;
-            var baseAngle = math.atan2(baseCornerRay.y, baseCornerRay.x);
-            if (baseAngle < 0.0) {
-                baseAngle += math.TAU;
-                angleRangeOffset = math.TAU;
+            bool nxny = false, nxpy = false;
+            Span<float2> cornerRays = stackalloc float2[4];
+            for (int i = 0; i < 4; i++) {
+                var ray = corners[i] - viewRayOriginOnBeamBasis;
+                if (ray.x <= 0f) {
+                    nxny |= ray.y < 0f;
+                    nxpy |= ray.y >= 0f;
+                }
+
+                cornerRays[i] = ray;
             }
 
-            var delta1 = mathx.signedanglethis(baseCornerRay, corners[1] - viewRayOriginOnBeamBasis);
-            var delta2 = mathx.signedanglethis(baseCornerRay, corners[2] - viewRayOriginOnBeamBasis);
-            var delta3 = mathx.signedanglethis(baseCornerRay, corners[3] - viewRayOriginOnBeamBasis);
-            var minDelta = MathUtils.min(delta1, delta2, delta3);
-            var maxDelta = MathUtils.max(delta1, delta2, delta3);
-            return (
-                range: new float2(baseAngle + minDelta, baseAngle + maxDelta),
-                angleRangeOffset
-            );
+            float2 range = new(float.PositiveInfinity, float.NegativeInfinity);
+            var invertX = nxny && nxpy;
+            var xSign = invertX ? -1f : 1f;
+            for (int i = 0; i < 4; i++) {
+                var ray = cornerRays[i];
+                ray.x *= xSign;
+                var angle = math.atan2(ray.y, ray.x);
+                range.x = math.min(range.x, angle);
+                range.y = math.max(range.y, angle);
+            }
+
+            return (range, invertX);
         }
 
         private static int uBeamImage = Shader.PropertyToID("uBeamImage");
@@ -78,7 +84,7 @@ namespace render {
         private static int uAccumulatorTexture = Shader.PropertyToID("uAccumulatorTexture");
         private static int uViewRayOriginOnBeamBasis = Shader.PropertyToID("uViewRayOriginOnBeamBasis");
         private static int uViewRayAngleRange = Shader.PropertyToID("uViewRayAngleRange");
-        private static int uViewRayAngleRangeOffset = Shader.PropertyToID("uViewRayAngleRangeOffset");
+        private static int uViewRayAngleRangeInvertX = Shader.PropertyToID("uViewRayAngleRangeInvertX");
         private static int uBeamDir = Shader.PropertyToID("uBeamDir");
         private static int uBeamBasisX = Shader.PropertyToID("uBeamBasisX");
         private static int uBeamBasisY = Shader.PropertyToID("uBeamBasisY");
@@ -119,20 +125,47 @@ namespace render {
             foreach (var beam in simSpace.enumerateBeams()) {
                 var basis = beam.image.orientation.basis(beam.direction.axis());
                 float3 tailPos = beam.tailPos;
-                if (!beam.wasBeingEmitted) {
-                    tailPos -= beam.direction.float3() * (1f - simulator.partialTick);
+                float3 headPos = beam.headPos;
+                if (!beam.beingEmitted) tailPos -= beam.direction.float3();
+                if (!beam.wasBeingEmitted) tailPos -= beam.direction.float3() * (1f - simulator.partialTick);
+                if (!beam.beingConsumed) headPos -= beam.direction.float3();
+                if (!beam.wasBeingConsumed) headPos -= beam.direction.float3() * (1f - simulator.partialTick);
+
+                uClipPlanesBuffer.Clear();
+
+                var headBoundsOffset = 0f;
+                var headDevice = simSpace.getDeviceAt(beam.headPos);
+                if (headDevice != null) {
+                    headDevice.beamRendering_configureBeamEnd(
+                        beam, Beam.End.Head, beam.direction, headPos,
+                        uClipPlanesBuffer, out headBoundsOffset
+                    );
+                } else {
+                    uClipPlanesBuffer.Add(headPos.f4());
+                    uClipPlanesBuffer.Add(beam.direction.float3().f4());
+                }
+                
+                var tailBoundsOffset = 0f;
+                var tailDevicePos = beam.tailPos;
+                if (!beam.beingEmitted) tailDevicePos -= beam.direction.int3();
+                if (!beam.wasBeingEmitted && beam.wasWasBeingEmitted) tailDevicePos -= beam.direction.int3();
+                var tailDevice = (tailDevicePos != beam.headPos).any() ? simSpace.getDeviceAt(tailDevicePos) : null;
+                if (tailDevice != null) {
+                    tailDevice.beamRendering_configureBeamEnd(
+                        beam, Beam.End.Tail, beam.direction.opposite(), tailPos,
+                        uClipPlanesBuffer, out tailBoundsOffset
+                    );
+                } else {
+                    uClipPlanesBuffer.Add(tailPos.f4());
+                    uClipPlanesBuffer.Add(beam.direction.opposite().float3().f4());
                 }
 
-                float length = beam.length;
-                float lengthDelta = 0f;
-                if (beam.wasBeingEmitted) lengthDelta += 1f;
-                if (beam.wasBeingConsumed) lengthDelta -= 1f;
-                length -= lengthDelta * (1f - simulator.partialTick);
-
+                var boundsTail = tailPos + beam.direction.float3(-tailBoundsOffset);
+                var boundsHead = headPos + beam.direction.float3(headBoundsOffset);
+                if ((boundsTail == boundsHead).all()) continue;
                 var bounds = new Bounds(
-                    tailPos + beam.direction.float3(length / 2f),
-                    basis.x.axis().float3(beamSize) + basis.y.axis().float3(beamSize) +
-                    beam.direction.axis().float3(length)
+                    (boundsHead + boundsTail) / 2f,
+                    math.abs((boundsHead - boundsTail) + basis.x.float3(beamSize) + basis.y.float3(beamSize))
                 );
 
                 if (!GeometryUtility.TestPlanesAABB(camPlanes, bounds)) continue;
@@ -155,31 +188,6 @@ namespace render {
                     beamToCam.dot(basis.x.float3()), beamToCam.dot(basis.y.float3())
                 );
                 renderParams.matProps.SetVector(uViewRayOriginOnBeamBasis, viewRayOriginOnBeamBasis.f4());
-
-                // clip planes
-                uClipPlanesBuffer.Clear();
-                var headDevice = simSpace.getDeviceAt(beam.headPos);
-                if (headDevice != null) {
-                    headDevice.beamRendering_addClipPlanes(beam, beam.direction,
-                        tailPos + beam.direction.float3(length), uClipPlanesBuffer);
-                } else {
-                    uClipPlanesBuffer.Add((tailPos + beam.direction.float3(length)).f4());
-                    uClipPlanesBuffer.Add(beam.direction.float3().f4());
-                }
-
-                var tailDevice =
-                    simSpace.getDeviceAt(beam.wasBeingEmitted
-                        ? beam.tailPos
-                        : (beam.tailPos - beam.direction.int3())); // TODO
-                if (tailDevice != null) {
-                    tailDevice.beamRendering_addClipPlanes(beam, beam.direction.opposite(), tailPos, uClipPlanesBuffer);
-                } else {
-                    uClipPlanesBuffer.Add(tailPos.f4());
-                    uClipPlanesBuffer.Add(beam.direction.opposite().float3().f4());
-                }
-
-                uClipPlanesBuffer.Add((tailPos + beam.direction.float3(length / 2f)).f4());
-                uClipPlanesBuffer.Add(new float4(math.cos(Time.time), math.sin(Time.time), 0f, 0f));
                 renderParams.matProps.SetVectorArray(uClipPlanes, uClipPlanesBuffer);
                 renderParams.matProps.SetInt(uClipPlanesCount, uClipPlanesBuffer.Count / 2);
 
@@ -217,9 +225,9 @@ namespace render {
 
                     ACCUMULATE_CS.SetVector(uViewRayOriginOnBeamBasis, viewRayOriginOnBeamBasis.f4());
                     var angleRange = calcAngleRange(corners, viewRayOriginOnBeamBasis);
-                    print(angleRange);
 
                     ACCUMULATE_CS.SetVector(uViewRayAngleRange, new float4(angleRange.range, 0, 0));
+                    ACCUMULATE_CS.SetBool(uViewRayAngleRangeInvertX, angleRange.invertX);
                     ACCUMULATE_CS.SetVector(uBeamSize, new float2(beamSize).f4());
                     uint groupSize;
                     ACCUMULATE_CS.GetKernelThreadGroupSizes(ACCUMULATE_CSK, out _, out groupSize, out _);
@@ -232,14 +240,15 @@ namespace render {
 
                     renderParams.matProps.SetTexture(uAccumulatorTexture, accumulatorTexture);
                     renderParams.matProps.SetVector(uViewRayAngleRange, new float4(angleRange.range, 0, 0));
-                    renderParams.matProps.SetFloat(uViewRayAngleRangeOffset, angleRange.offset);
+                    renderParams.matProps.SetInt(uViewRayAngleRangeInvertX, angleRange.invertX ? 1 : 0);
                 }
 
+                var boundsSize = bounds.size;
                 var matrix = new Matrix4x4(
-                    new float4(basis.x.float3(beamSize), 0f),
-                    new float4(basis.y.float3(beamSize), 0f),
-                    new float4(beam.direction.float3(length), 0f),
-                    new float4(tailPos, 1f)
+                    new float4(boundsSize.x, 0f, 0f, 0f),
+                    new float4(0f, boundsSize.y, 0f, 0f),
+                    new float4(0f, 0f, boundsSize.z, 0f),
+                    new float4(bounds.center, 1f)
                 );
 
                 Graphics.RenderMesh(renderParams, MESH, 0, matrix);
@@ -276,77 +285,45 @@ namespace render {
 
         [RuntimeInitializeOnLoadMethod]
         private static void CreateCube() {
-            Mesh mesh = new Mesh();
-            mesh.name = "GeneratedCube";
+            var mesh = new Mesh();
 
-            // Cube from (0,0,0) to (1,1,1)
-            // then shifted by (-0.5,-0.5,-0.5)
-            //
-            // UVs use the unshifted XY coordinates.
-
-            var offset = new Vector3(-0.5f, -0.5f, 0.0f);
-
-            Vector3[] vertices = {
-                // Front
-                new Vector3(0f, 0f, 1f) + offset,
-                new Vector3(1f, 0f, 1f) + offset,
-                new Vector3(1f, 1f, 1f) + offset,
-                new Vector3(0f, 1f, 1f) + offset,
-
-                // Back
-                new Vector3(1f, 0f, 0f) + offset,
-                new Vector3(0f, 0f, 0f) + offset,
-                new Vector3(0f, 1f, 0f) + offset,
-                new Vector3(1f, 1f, 0f) + offset,
-
-                // Left
-                new Vector3(0f, 0f, 0f) + offset,
-                new Vector3(0f, 0f, 1f) + offset,
-                new Vector3(0f, 1f, 1f) + offset,
-                new Vector3(0f, 1f, 0f) + offset,
-
-                // Right
-                new Vector3(1f, 0f, 1f) + offset,
-                new Vector3(1f, 0f, 0f) + offset,
-                new Vector3(1f, 1f, 0f) + offset,
-                new Vector3(1f, 1f, 1f) + offset,
-
-                // Top
-                new Vector3(0f, 1f, 1f) + offset,
-                new Vector3(1f, 1f, 1f) + offset,
-                new Vector3(1f, 1f, 0f) + offset,
-                new Vector3(0f, 1f, 0f) + offset,
-
-                // Bottom
-                new Vector3(0f, 0f, 0f) + offset,
-                new Vector3(1f, 0f, 0f) + offset,
-                new Vector3(1f, 0f, 1f) + offset,
-                new Vector3(0f, 0f, 1f) + offset,
+            mesh.vertices = new[] {
+                new Vector3(-0.5f, -0.5f, -0.5f), // 0
+                new Vector3(0.5f, -0.5f, -0.5f), // 1
+                new Vector3(0.5f, 0.5f, -0.5f), // 2
+                new Vector3(-0.5f, 0.5f, -0.5f), // 3
+                new Vector3(-0.5f, -0.5f, 0.5f), // 4
+                new Vector3(0.5f, -0.5f, 0.5f), // 5
+                new Vector3(0.5f, 0.5f, 0.5f), // 6
+                new Vector3(-0.5f, 0.5f, 0.5f), // 7
             };
 
-            Vector2[] uvs = new Vector2[vertices.Length];
+            mesh.triangles = new[] {
+                // Front (+Z)
+                4, 5, 6,
+                4, 6, 7,
 
-            for (int i = 0; i < vertices.Length; i++) {
-                // Undo center offset for UV generation
-                Vector3 p = vertices[i] + Vector3.one * 0.5f;
+                // Back (-Z)
+                0, 2, 1,
+                0, 3, 2,
 
-                uvs[i] = new Vector2(p.x, p.y);
-            }
+                // Left (-X)
+                0, 7, 3,
+                0, 4, 7,
 
-            int[] triangles = {
-                0, 1, 2, 0, 2, 3,
-                4, 5, 6, 4, 6, 7,
-                8, 9, 10, 8, 10, 11,
-                12, 13, 14, 12, 14, 15,
-                16, 17, 18, 16, 18, 19,
-                20, 21, 22, 20, 22, 23
+                // Right (+X)
+                1, 6, 5,
+                1, 2, 6,
+
+                // Top (+Y)
+                3, 6, 2,
+                3, 7, 6,
+
+                // Bottom (-Y)
+                0, 5, 4,
+                0, 1, 5,
             };
 
-            mesh.vertices = vertices;
-            mesh.uv = uvs;
-            mesh.triangles = triangles;
-
-            mesh.RecalculateNormals();
             mesh.RecalculateBounds();
 
             MESH = mesh;
