@@ -93,7 +93,7 @@ namespace device {
                                 var size = math.max(frontBeam.image.size, backBeam.image.size);
                                 outputImage = new BeamImage(
                                     bidm.addNew(size).id,
-                                    size,
+                                    size, // TODO
                                     BeamImageOrientation.PosXPosY, // TODO
                                     0,
                                     1f, 0f

@@ -49,15 +49,7 @@ namespace utils {
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static Axis orthoAxis(this (Axis, Axis) axes) => axes switch {
-            (Axis.X, Axis.Y) => Axis.Z,
-            (Axis.Y, Axis.X) => Axis.Z,
-            (Axis.X, Axis.Z) => Axis.Y,
-            (Axis.Z, Axis.X) => Axis.Y,
-            (Axis.Y, Axis.Z) => Axis.X,
-            (Axis.Z, Axis.Y) => Axis.X,
-            _ => throw new ArgumentOutOfRangeException(nameof(axes), axes, null)
-        };
+        public static Axis orthoAxis(this (Axis, Axis) axes) => (Axis)(3 - (byte)axes.Item1 - (byte)axes.Item2);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static Axis rotate(this Axis self, Axis axis) {

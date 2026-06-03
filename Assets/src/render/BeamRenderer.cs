@@ -77,7 +77,6 @@ namespace render {
 
         private static int uBeamImage = Shader.PropertyToID("uBeamImage");
         private static int uBeamImageOrigin = Shader.PropertyToID("uBeamImageOrigin");
-        private static int uBeamImageBasisPacked = Shader.PropertyToID("uBeamImageBasisPacked");
         private static int uBeamImageSize = Shader.PropertyToID("uBeamImageSize");
         private static int uBeamImageModulation = Shader.PropertyToID("uBeamImageModulation");
         private static int uBeamImageBias = Shader.PropertyToID("uBeamImageBias");
@@ -196,15 +195,9 @@ namespace render {
                 } else {
                     ACCUMULATE_CS.SetTexture(ACCUMULATE_CSK, uBeamImage,
                         beam.image.getTexture(simulator.beamImageDataManager));
-                    var beamImageOrigin = int2.zero;
-                    beamImageOrigin.x = beam.image.orientation.xSign() == Sign.Neg ? (int)beam.image.size.x : 0;
-                    beamImageOrigin.y = beam.image.orientation.ySign() == Sign.Neg ? (int)beam.image.size.y : 0;
-                    if (beam.image.orientation.isXYSwapped()) beamImageOrigin = beamImageOrigin.yx;
-                    ACCUMULATE_CS.SetInts(uBeamImageOrigin, beamImageOrigin.x, beamImageOrigin.y);
-                    var int2Basis = beam.image.orientation.int2Basis();
-                    ACCUMULATE_CS.SetInts(uBeamImageBasisPacked, int2Basis.x.x, int2Basis.x.y, int2Basis.y.x,
-                        int2Basis.y.y);
-                    ACCUMULATE_CS.SetInts(uBeamImageSize, (int)beam.image.size.x, (int)beam.image.size.y);
+                    ACCUMULATE_CS.SetInts(uBeamImageOrigin, beam.image.offset.x, beam.image.offset.y);
+                    var beamImageSizeOrientated = beam.image.orientation.isXYSwapped() ? beam.image.size.yx : beam.image.size;
+                    ACCUMULATE_CS.SetInts(uBeamImageSize, (int)beamImageSizeOrientated.x, (int)beamImageSizeOrientated.y);
                     ACCUMULATE_CS.SetVector(uBeamImageModulation, beam.image.modulation);
                     ACCUMULATE_CS.SetVector(uBeamImageBias, beam.image.bias);
 
@@ -277,6 +270,7 @@ namespace render {
                         Vector4.zero,
                         0
                     );
+                    print(hoveringBeam.Value.image.orientation);
                 }
             }
         }

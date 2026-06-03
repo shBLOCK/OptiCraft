@@ -10,7 +10,6 @@
 SamplerState PointClampSampler;
 Texture2D uBeamImage;
 int2 uBeamImageOrigin;
-int4 uBeamImageBasisPacked;
 int2 uBeamImageSize;
 float4 uBeamImageModulation;
 float4 uBeamImageBias;
@@ -40,8 +39,6 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     RayRectIntersection rayRectIntersection = rayRectIntersect(uViewRayOriginOnBeamBasis, rayDir, uBeamSize * 0.5);
     if (isinf(rayRectIntersection.enterDist)) return;
 
-    int2x2 uBeamImageBasis = transpose(int2x2(uBeamImageBasisPacked.xy, uBeamImageBasisPacked.zw));
-
     float recordStepLen = length(uBeamSize) / float(uAccumulatorTextureSize.x - 1);
     float4 acc;
     PixelGridWalker walker = initPixelGridWalker(
@@ -56,7 +53,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     for (int i = 0; i < 10000; ++i) {
         float pixelStepLen = stepPixelGridWalker(walker);
         if (any(walker.pixel < 0) || any(walker.pixel >= uBeamImageSize)) break;
-        int2 pixelCoord = uBeamImageOrigin + mul(uBeamImageBasis, walker.pixel);
+        int2 pixelCoord = uBeamImageOrigin + walker.pixel;
         float4 pixelColor = uBeamImage.Load(int3(pixelCoord, 0)) * uBeamImageModulation + uBeamImageBias;
         pixelColor = float4(
             SanitizeFinite(pixelColor.r),
@@ -64,6 +61,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
             SanitizeFinite(pixelColor.b),
             SanitizeFinite(pixelColor.a)
         );
+        // pixelColor = pow(pixelColor, 2.2);
         pixelColor = max(0.0, pixelColor);
         // acc += pixelColor * stepLen; // TODO: fade by distance
         float partialPixelStepLen = 0.0;
