@@ -125,30 +125,15 @@ namespace render {
                 var basis = beam.image.orientation.basis(beam.direction.axis());
                 float3 tailPos = beam.tailPos;
                 float3 headPos = beam.headPos;
-                if (!beam.beingEmitted) tailPos -= beam.direction.float3();
                 if (!beam.wasBeingEmitted) tailPos -= beam.direction.float3() * (1f - simulator.partialTick);
-                if (!beam.beingConsumed) headPos -= beam.direction.float3();
                 if (!beam.wasBeingConsumed) headPos -= beam.direction.float3() * (1f - simulator.partialTick);
 
                 uClipPlanesBuffer.Clear();
 
-                var headBoundsOffset = 0f;
-                var headDevice = simSpace.getDeviceAt(beam.headPos);
-                if (headDevice != null) {
-                    headDevice.beamRendering_configureBeamEnd(
-                        beam, Beam.End.Head, beam.direction, headPos,
-                        uClipPlanesBuffer, out headBoundsOffset
-                    );
-                } else {
-                    uClipPlanesBuffer.Add(headPos.f4());
-                    uClipPlanesBuffer.Add(beam.direction.float3().f4());
-                }
-                
                 var tailBoundsOffset = 0f;
                 var tailDevicePos = beam.tailPos;
-                if (!beam.beingEmitted) tailDevicePos -= beam.direction.int3();
-                if (!beam.wasBeingEmitted && beam.wasWasBeingEmitted) tailDevicePos -= beam.direction.int3();
-                var tailDevice = (tailDevicePos != beam.headPos).any() ? simSpace.getDeviceAt(tailDevicePos) : null;
+                if (!beam.beingEmitted && !beam.wasBeingEmitted) tailDevicePos -= beam.direction.int3();
+                var tailDevice = beam.length >= 0 ? simSpace.getDeviceAt(tailDevicePos) : null;
                 if (tailDevice != null) {
                     tailDevice.beamRendering_configureBeamEnd(
                         beam, Beam.End.Tail, beam.direction.opposite(), tailPos,
@@ -157,6 +142,20 @@ namespace render {
                 } else {
                     uClipPlanesBuffer.Add(tailPos.f4());
                     uClipPlanesBuffer.Add(beam.direction.opposite().float3().f4());
+                }
+
+                var headBoundsOffset = 0f;
+                var headDevice = (beam.headPos != tailDevicePos).any() || beam.length < 0
+                    ? simSpace.getDeviceAt(beam.headPos)
+                    : null;
+                if (headDevice != null) {
+                    headDevice.beamRendering_configureBeamEnd(
+                        beam, Beam.End.Head, beam.direction, headPos,
+                        uClipPlanesBuffer, out headBoundsOffset
+                    );
+                } else {
+                    uClipPlanesBuffer.Add(headPos.f4());
+                    uClipPlanesBuffer.Add(beam.direction.float3().f4());
                 }
 
                 var boundsTail = tailPos + beam.direction.float3(-tailBoundsOffset);
@@ -196,8 +195,10 @@ namespace render {
                     ACCUMULATE_CS.SetTexture(ACCUMULATE_CSK, uBeamImage,
                         beam.image.getTexture(simulator.beamImageDataManager));
                     ACCUMULATE_CS.SetInts(uBeamImageOrigin, beam.image.offset.x, beam.image.offset.y);
-                    var beamImageSizeOrientated = beam.image.orientation.isXYSwapped() ? beam.image.size.yx : beam.image.size;
-                    ACCUMULATE_CS.SetInts(uBeamImageSize, (int)beamImageSizeOrientated.x, (int)beamImageSizeOrientated.y);
+                    var beamImageSizeOrientated =
+                        beam.image.orientation.isXYSwapped() ? beam.image.size.yx : beam.image.size;
+                    ACCUMULATE_CS.SetInts(uBeamImageSize, (int)beamImageSizeOrientated.x,
+                        (int)beamImageSizeOrientated.y);
                     ACCUMULATE_CS.SetVector(uBeamImageModulation, beam.image.modulation);
                     ACCUMULATE_CS.SetVector(uBeamImageBias, beam.image.bias);
 
@@ -261,7 +262,7 @@ namespace render {
             if (Event.current.type == EventType.Repaint) {
                 if (hoveringBeam != null) {
                     GUI.DrawTexture(
-                        new Rect(Screen.width - 10 - 256, 10, 256, 256),
+                        new Rect(Screen.width / GUI.matrix.m00 - 10 - 256, 10, 256, 256),
                         hoveringBeam.Value.image.getTexture(simulator.beamImageDataManager),
                         ScaleMode.ScaleToFit,
                         false,

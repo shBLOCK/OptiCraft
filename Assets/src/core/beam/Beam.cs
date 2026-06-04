@@ -87,12 +87,6 @@ namespace core.beam {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void preTick() {
-            // update delayed beingEmitted/Consumed flags
-            flags = (BeamFlags)(((ushort)flags & ~0b111100) | (((ushort)flags & 0b1111) << 2));
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void tick() {
             if (!beingEmitted) {
                 tailPos += direction.int3();
@@ -100,6 +94,9 @@ namespace core.beam {
 
             if (beingEmitted) length++;
             if (beingConsumed) length--;
+            
+            // update delayed beingEmitted/Consumed flags
+            flags = (BeamFlags)(((ushort)flags & ~0b111100) | (((ushort)flags & 0b1111) << 2));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

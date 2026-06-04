@@ -46,15 +46,6 @@ namespace core {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void tick_preTickBeams() {
-            for (int i = 0; i < beams.Length; i++) {
-                ref var beam = ref beams.ElementAt(i);
-                if (!beam.isValid) continue;
-                beam.preTick();
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void tick_tickBeams() {
             for (int i = 0; i < beams.Length; i++) {
                 ref var beam = ref beams.ElementAt(i);
@@ -112,11 +103,10 @@ namespace core {
         }
 
         public void tick() {
-            tick_preTickBeams();
+            tick_tickBeams();
             tick_beamDeviceInteraction();
             tick_tickDevices();
             tick_emitStagedBeams();
-            tick_tickBeams();
         }
 
         public void addDevice(OCDevice device) {

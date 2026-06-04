@@ -85,8 +85,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
         }
     }
     
-    // buffer zone
-    for (int i = 0; i < 3; i++) {
-        uAccumulatorTexture[uint2(min(uAccumulatorTextureU + i, uAccumulatorTextureSize.x - 1), id.y)] = acc;
+    for (int i = uAccumulatorTextureU + 1; i < uAccumulatorTextureSize.x; i++) {
+        uAccumulatorTexture[uint2(i, id.y)] = acc;
     }
 }
