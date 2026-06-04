@@ -16,6 +16,12 @@ namespace device {
             consumingBeams[beam.direction] = Beam.INVALID_ID;
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            if (beamEnd == Beam.End.Head) {
+                consumingBeams.replaceAll(beam.id, newId);
+            }
+        }
+
         public override void reset() {
             consumingBeams.fill(Beam.INVALID_ID);
         }

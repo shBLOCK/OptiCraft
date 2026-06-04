@@ -55,6 +55,19 @@ namespace device {
             }
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            for (byte i = 0; i < 3; i++) {
+                ref var state = ref stateOnFrontInputAxis[(Axis)i];
+                if (beamEnd == Beam.End.Head) {
+                    state.backInput.replaceThis(beam.id, newId);
+                    state.frontInput.replaceThis(beam.id, newId);
+                } else {
+                    state.backOutput.replaceThis(beam.id, newId);
+                    state.frontOutput.replaceThis(beam.id, newId);
+                }
+            }
+        }
+
         private static ComputeShader CS;
         private static int CSK;
         private static readonly BeamImageShaderUniform uInputAImage = new("uInputAImage");

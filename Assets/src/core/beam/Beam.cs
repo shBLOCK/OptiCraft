@@ -31,6 +31,9 @@ namespace core.beam {
             GreenChannelEmpty = 1 << 7,
             BlueChannelEmpty = 1 << 8,
             UVChannelEmpty = 1 << 9,
+            
+            EmittedFlags = BeingEmitted | WasBeingEmitted | WasWasBeingEmitted,
+            ConsumedFlags = BeingConsumed | WasBeingConsumed | WasWasBeingConsumed,
         }
 
         private BeamFlags flags;
@@ -56,10 +59,14 @@ namespace core.beam {
         public bool isValid => id != INVALID_ID;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal void _emit(BeamImageData.Manager beamImageDataManager) {
+        internal void _onAdded(BeamImageData.Manager beamImageDataManager) {
+            image.incRef(beamImageDataManager);
+        }
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void _emit() {
             Assert.IsFalse(beingEmitted, "Beam already being emitted");
             flags |= BeamFlags.BeingEmitted;
-            image.incRef(beamImageDataManager);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -84,6 +91,20 @@ namespace core.beam {
         internal void _end(BeamImageData.Manager beamImageDataManager) {
             id = INVALID_ID;
             image.decRef(beamImageDataManager);
+        }
+
+        internal Beam _splitHead(int splitLength) {
+            Assert.IsTrue(0 < splitLength && splitLength < length);
+            
+            var splitHeadBeam = this;
+            splitHeadBeam.length = length - splitLength;
+            length = splitLength;
+            splitHeadBeam.tailPos += direction.int3(splitLength);
+
+            flags &= ~BeamFlags.ConsumedFlags;
+            splitHeadBeam.flags &= ~BeamFlags.EmittedFlags;
+            
+            return splitHeadBeam;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

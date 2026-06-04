@@ -58,5 +58,8 @@ namespace utils {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float max(float a, float b, float c) => math.max(math.max(a, b), c);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int cBitOr(this int3 value) => value.x | value.y | value.z;
     }
 }

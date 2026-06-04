@@ -39,6 +39,14 @@ namespace utils {
             Axis.Z => new float3(0, 0, length),
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static int3 int3(this Axis axis, int length = 1) => axis switch {
+            Axis.X => new int3(length, 0, 0),
+            Axis.Y => new int3(0, length, 0),
+            Axis.Z => new int3(0, 0, length),
+            _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
+        };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static (Axis x, Axis y) orthoBasis(this Axis axis) => axis switch {

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 
 namespace utils {
     public struct ByteEnumMap<K, V> where K : Enum {
-        private readonly V[] arr;
+        internal readonly V[] arr;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ByteEnumMap(int entries, V initialValue) {
@@ -14,8 +14,16 @@ namespace utils {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => ref arr[Unsafe.As<K, byte>(ref key)];
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void fill(V value) => Array.Fill(arr, value);
+    }
+
+    public static class ByteEnumMapExtensions {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void replaceAll<K, V>(this ByteEnumMap<K, V> self, V oldValue, V newValue)
+            where K : Enum where V : IEquatable<V> {
+            self.arr.replaceAll(oldValue, newValue);
+        }
     }
 }

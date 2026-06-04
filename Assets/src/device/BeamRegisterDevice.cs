@@ -28,6 +28,14 @@ namespace device {
             }
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            if (beamEnd == Beam.End.Head) {
+                inputBeam.replaceThis(beam.id, newId);
+            } else {
+                outputBeam.replaceThis(beam.id, newId);
+            }
+        }
+
         private bool condition() => isInSpace && space.simulator.tickNumber % 100 == 0;
         
         public override void tick() {

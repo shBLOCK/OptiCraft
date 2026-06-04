@@ -36,6 +36,21 @@ namespace device {
         public override void onBeamEnd(ref Beam beam) {
             handleInputBeam(ref beam, Beam.INVALID_ID);
         }
+        
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            for (byte i = 0; i < 2; i++) {
+                ref var state = ref modulatingStates[(Sign)i];
+                if (beamEnd == Beam.End.Head) {
+                    state.input.replaceThis(beam.id, newId);
+                } else {
+                    state.output.replaceThis(beam.id, newId);
+                }
+            }
+            
+            if (beamEnd == Beam.End.Head) {
+                modulatorBeams.replaceAll(beam.id, newId);
+            }
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void handleInputBeam(ref Beam beam, ushort id) {

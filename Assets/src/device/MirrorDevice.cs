@@ -28,6 +28,17 @@ namespace device {
             beams[beam.direction.opposite()] = BeamIOPair.INVALID_IDS;
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            for (byte i = 0; i < 6; i++) {
+                ref var pair = ref beams[(AxisDirection)i];
+                if (beamEnd == Beam.End.Head) {
+                    pair.input.replaceThis(beam.id, newId);
+                } else {
+                    pair.output.replaceThis(beam.id, newId);
+                }
+            }
+        }
+
         public override void onRemoved() {
             for (byte i = 0; i < 6; i++) {
                 var direction = (AxisDirection)i;

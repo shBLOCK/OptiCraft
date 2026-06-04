@@ -47,6 +47,14 @@ namespace device {
             }
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            if (beamEnd == Beam.End.Head) {
+                inputBeam.replaceThis(beam.id, newId);
+            } else {
+                outputBeams.replaceAll(beam.id, newId);
+            }
+        }
+
         public override void reset() {
             inputBeam = Beam.INVALID_ID;
             Array.Fill(outputBeams, Beam.INVALID_ID);

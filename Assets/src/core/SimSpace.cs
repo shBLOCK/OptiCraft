@@ -89,7 +89,7 @@ namespace core {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void tick_emitStagedBeams() {
+        private void emitStagedBeams() {
             foreach (var beam in beamsStaging) {
                 beams[beam.id] = beam;
             }
@@ -106,12 +106,14 @@ namespace core {
             tick_tickBeams();
             tick_beamDeviceInteraction();
             tick_tickDevices();
-            tick_emitStagedBeams();
+            emitStagedBeams();
         }
 
         public void addDevice(OCDevice device) {
             devices.Add(device);
             device.onAdded(this);
+            device.tick(); // TODO: this is kinda gross, but for all current devices this should work
+            emitStagedBeams();
         }
 
         public void removeDevice(OCDevice device) {
@@ -122,6 +124,31 @@ namespace core {
         internal void _deviceOccupy(OCDevice device, int3 gridPos) {
             Assert.IsFalse(posDeviceMap.ContainsKey(gridPos));
             posDeviceMap[gridPos] = device;
+            
+            for (int i = 0; i < beams.Length; i++) {
+                ref var beam = ref beams.ElementAt(i);
+                if (!beam.isValid) continue;
+                if (beam.length <= 0) continue;
+                var axisMask = beam.direction.axis().int3(~0);
+                var antiAxisMask = ~axisMask;
+                if (((gridPos & antiAxisMask) == (beam.tailPos & antiAxisMask)).all()) {
+                    var sign = beam.direction.sign().intValue();
+                    var deviceAxisPos = (gridPos & axisMask).cBitOr() * sign;
+                    var tailAxisPos = (beam.tailPos & axisMask).cBitOr() * sign;
+                    var headAxisPos = tailAxisPos + beam.length;
+                    if (tailAxisPos < deviceAxisPos && deviceAxisPos <= headAxisPos) {
+                        if (deviceAxisPos != headAxisPos) {
+                            var splitHeadBeam = _addBeam(beam._splitHead(deviceAxisPos - tailAxisPos)).id;
+                            foreach (var _device in enumerateDevices()) {
+                                _device.onBeamIdChanged(ref beam, Beam.End.Head, splitHeadBeam);
+                            }
+                        }
+                        device.onBeamHit(ref beam);
+                    }
+                }
+            }
+
+            emitStagedBeams();
         }
 
         internal void _deviceUnoccupy(OCDevice device, int3 gridPos) {
@@ -132,10 +159,8 @@ namespace core {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ref Beam getBeam(ushort id) => ref beams.ElementAt(id);
 
-        /// <returns>The same reference as the parameter beam reference, for convenience.
-        /// **NOT** a reference to the actual beam instance in the space.</returns>
-        public Beam emitBeam(Beam beam) {
-            beam._emit(simulator.beamImageDataManager);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Beam _addBeam(Beam beam) {
             if (beamsFreeSlots.TryPop(out var slot)) {
                 beam.id = slot;
                 beamsStaging.Add(beam);
@@ -143,9 +168,19 @@ namespace core {
                 beam.id = (ushort)(beams.Length + beamsStagingExtra.Count);
                 beamsStagingExtra.Add(beam);
             }
-
+            
+            beam._onAdded(simulator.beamImageDataManager);
+            
             onBeamAdded?.Invoke(beam);
+
             return beam;
+        }
+
+        /// <returns>The same reference as the parameter beam reference, for convenience.
+        /// **NOT** a reference to the actual beam instance in the space.</returns>
+        public Beam emitBeam(Beam beam) {
+            beam._emit();
+            return _addBeam(beam);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

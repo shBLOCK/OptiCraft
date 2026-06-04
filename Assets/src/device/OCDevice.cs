@@ -40,10 +40,9 @@ namespace device {
         public virtual void tick() { }
 
         public virtual void onBeamHit(ref Beam beam) { }
-
-        // public virtual void onBeamHitEdge(ref Beam beam) { }
         public virtual void onBeamEnd(ref Beam beam) { }
-        // public virtual void onBeamEndEdge(ref Beam beam) { }
+
+        public virtual void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) { }
 
         public virtual void render() { }
 

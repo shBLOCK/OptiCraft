@@ -41,6 +41,12 @@ namespace device {
             space.consumeBeam(ref beam);
         }
 
+        public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            if (beamEnd == Beam.End.Tail) {
+                emittingBeam.replaceThis(beam.id, newId);
+            }
+        }
+
         public override void onRemoved() {
             if (emittingBeam != Beam.INVALID_ID) {
                 space.stopEmitBeam(emittingBeam);

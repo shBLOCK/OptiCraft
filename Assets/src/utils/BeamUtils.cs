@@ -2,11 +2,11 @@
 using System.Runtime.CompilerServices;
 
 namespace utils {
-    public readonly struct BeamIOPair : IEquatable<BeamIOPair> {
+    public struct BeamIOPair : IEquatable<BeamIOPair> {
         public static BeamIOPair INVALID_IDS = new(ushort.MaxValue, ushort.MaxValue);
 
-        public readonly ushort input;
-        public readonly ushort output;
+        public ushort input;
+        public ushort output;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BeamIOPair(ushort input, ushort output) {
