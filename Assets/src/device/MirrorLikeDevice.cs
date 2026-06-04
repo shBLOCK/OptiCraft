@@ -32,6 +32,11 @@ namespace device {
         ) {
             var axis = enterDir.axis();
             if (axis == mirrorDir.dirA().axis() || axis == mirrorDir.dirB().axis()) {
+                if (mirrorDir.dirA() == mirrorDir.dirB()) {
+                    base.beamRendering_configureBeamEnd(beam, beamEnd, enterDir, endPos, clipPlanesData, out boundsOffset);
+                    return;
+                }
+                
                 var normal = mirrorDir.normal();
                 if (normal.dot(enterDir.float3()) < 0f) {
                     normal = -normal;
@@ -50,7 +55,7 @@ namespace device {
                         boundsOffset = beam.wasWasBeingConsumed ? 1f : space.simulator.partialTick;
                     }
                 }
-
+            
                 clipPlanesData.Add((endPos + enterDir.float3(boundsOffset)).f4());
                 clipPlanesData.Add(enterDir.float3().f4());
             } else {

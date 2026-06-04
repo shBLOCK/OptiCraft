@@ -121,12 +121,21 @@ namespace device {
                             var (inDir, reflectDir) = mirrorDir.getDirOnAxisAndOtherDir(axis);
                             var frontOutput = space.emitBeam(new Beam(gridPos, reflectDir, outputImage));
                             var backOutput = space.emitBeam(new Beam(gridPos, inDir.opposite(), outputImage));
+                            
                             state.frontOutput = frontOutput.id;
-                            frontOutput.image.incRef(bidm);
-                            state.oldFrontInputImage = frontOutput.image;
+                            if (state.frontInput != Beam.INVALID_ID) {
+                                state.oldFrontInputImage = space.getBeam(state.frontInput).image;
+                                state.oldFrontInputImage.incRef(bidm);
+                            } else {
+                                state.oldFrontInputImage = BeamImage.DUMMY;
+                            }
                             state.backOutput = backOutput.id;
-                            backOutput.image.incRef(bidm);
-                            state.oldBackInputImage = backOutput.image;
+                            if (state.backInput != Beam.INVALID_ID) {
+                                state.oldBackInputImage = space.getBeam(state.backInput).image;
+                                state.oldBackInputImage.incRef(bidm);
+                            } else {
+                                state.oldBackInputImage = BeamImage.DUMMY;
+                            }
                         } else {
                             state.frontOutput = Beam.INVALID_ID;
                             state.oldFrontInputImage = BeamImage.DUMMY;

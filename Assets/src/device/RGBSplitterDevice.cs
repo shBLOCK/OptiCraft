@@ -20,14 +20,22 @@ namespace device {
             space.consumeBeam(ref beam);
             if (beam.direction.opposite() == inputDirection) {
                 inputBeam = beam.id;
+                var greenDirection = inputDirection.opposite();
+                var blueDirection = redDirection.opposite();
                 outputBeams[0] = space
-                    .emitBeam(new Beam(gridPos, redDirection, beam.image.modulated(new float4(1, 0, 0, 0)))).id;
+                    .emitBeam(new Beam(
+                        gridPos, redDirection,
+                        beam.image.modulated(new float4(1, 0, 0, 0))
+                            .withOrientation(beam.image.orientation.reflect(beam.direction.opposite(), redDirection))
+                    )).id;
                 outputBeams[1] = space
-                    .emitBeam(
-                        new Beam(gridPos, inputDirection.opposite(), beam.image.modulated(new float4(0, 1, 0, 0)))).id;
+                    .emitBeam(new Beam(gridPos, greenDirection, beam.image.modulated(new float4(0, 1, 0, 0)))).id;
                 outputBeams[2] = space
-                    .emitBeam(new Beam(gridPos, redDirection.opposite(), beam.image.modulated(new float4(0, 0, 1, 0))))
-                    .id;
+                    .emitBeam(new Beam(
+                        gridPos, blueDirection,
+                        beam.image.modulated(new float4(0, 0, 1, 0))
+                            .withOrientation(beam.image.orientation.reflect(beam.direction.opposite(), blueDirection))
+                    )).id;
             }
         }
 
@@ -49,6 +57,7 @@ namespace device {
             for (int i = 0; i < 3; i++) {
                 if (outputBeams[i] != Beam.INVALID_ID) space.stopEmitBeam(outputBeams[i]);
             }
+
             reset();
 
             base.onRemoved();
@@ -60,6 +69,7 @@ namespace device {
             data["redDirection"] = redDirection.ToString();
             return data;
         }
+
         protected override void loadData(JsonObject data) {
             base.loadData(data);
             inputDirection = Enum.Parse<AxisDirection>(data["inputDirection"].GetValue<string>());
@@ -68,11 +78,15 @@ namespace device {
 
         public override void render() {
             base.render();
-            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + redDirection.float3(0.75f), new float3(0.1f)), Color.red);
-            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + inputDirection.opposite().float3(0.75f), new float3(0.1f)),
+            DebugUtils.drawBoundsWireframe(
+                new Bounds(new float3(gridPos) + redDirection.float3(0.75f), new float3(0.1f)), Color.red);
+            DebugUtils.drawBoundsWireframe(
+                new Bounds(new float3(gridPos) + inputDirection.opposite().float3(0.75f), new float3(0.1f)),
                 Color.green);
-            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + redDirection.opposite().float3(0.75f), new float3(0.1f)), Color.blue);
-            DebugUtils.drawBoundsWireframe(new Bounds(new float3(gridPos) + inputDirection.float3(0.75f), new float3(0.1f)), Color.white);
+            DebugUtils.drawBoundsWireframe(
+                new Bounds(new float3(gridPos) + redDirection.opposite().float3(0.75f), new float3(0.1f)), Color.blue);
+            DebugUtils.drawBoundsWireframe(
+                new Bounds(new float3(gridPos) + inputDirection.float3(0.75f), new float3(0.1f)), Color.white);
         }
 
         public override void userActionRotate(AxisDirection axis) {
