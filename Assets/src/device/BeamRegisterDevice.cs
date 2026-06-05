@@ -36,6 +36,8 @@ namespace device {
             }
         }
 
+        public override bool isValidGridPos(int3 pos) => GridUtils.isGridCenter(pos);
+
         private bool condition() => isInSpace && space.simulator.tickNumber % 100 == 0;
         
         public override void tick() {
@@ -75,7 +77,7 @@ namespace device {
             direction = Enum.Parse<AxisDirection>(data["direction"].GetValue<string>());
         }
 
-        public override void userActionRotate(AxisDirection axis) {
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
             direction = direction.rotate(axis);
         }
 

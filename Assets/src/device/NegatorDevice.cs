@@ -10,6 +10,9 @@ namespace device {
         private Axis axis;
         private ByteEnumMap<Sign, BeamIOPair> beams = new(2, BeamIOPair.INVALID_IDS);
 
+        public override bool isValidGridPos(int3 pos) =>
+            GridUtils.isGridCenter(pos) || GridUtils.isGridEdgeAlongAxis(pos, axis);
+
         public override void onBeamHit(ref Beam beam) {
             space.consumeBeam(ref beam);
             if (beam.direction.axis() == axis) {
@@ -66,16 +69,24 @@ namespace device {
 
         private AxisDirection anim_rotAxis;
         private Axis anim_lastAxis;
+        private float anim_rotAngle;
         private float anim_rotStartTime = float.NegativeInfinity;
 
-        public override void userActionRotate(AxisDirection axis) {
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
+            base.userActionRotate(axis, inplace);
+            
             anim_lastAxis = this.axis;
             anim_rotAxis = axis;
             anim_rotStartTime = Time.time;
-            
-            this.axis = this.axis.rotate(axis.axis());
+
+            anim_rotAngle = 0f;
+            for (int i = 0; i < 4; i++) {
+                this.axis = this.axis.rotate(axis.axis());
+                anim_rotAngle = math.PIHALF;
+                if (!inplace || isValidGridPos(gridPos)) break;
+            }
         }
-        
+
         private static Mesh MESH_FRAME;
         private static Mesh MESH_FILM;
         private static Material MAT_FRAME;
@@ -94,7 +105,7 @@ namespace device {
             var quat = AnimationUtils.deviceRotationAnimation(
                 (Time.time - anim_rotStartTime) / 0.2f,
                 anim_lastAxis.modelRotation(), axis.modelRotation(),
-                anim_rotAxis.float3(), math.PIHALF,
+                anim_rotAxis.float3(), anim_rotAngle,
                 out _
             );
             var modelMat = new float4x4(quat, getRenderPosWithAnimation());

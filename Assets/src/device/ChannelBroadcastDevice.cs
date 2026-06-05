@@ -91,7 +91,7 @@ namespace device {
             axis = Enum.Parse<Axis>(data["axis"].GetValue<string>());
         }
 
-        public override void userActionRotate(AxisDirection axis) {
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
             this.axis = this.axis.rotate(axis.axis());
         }
 

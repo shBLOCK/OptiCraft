@@ -6,7 +6,7 @@ using UnityEngine;
 using utils;
 
 namespace device {
-    public sealed class BeamSourceDevice : BlockerDevice {
+    public sealed class BeamSourceDevice : BeamBlockingDevice {
         private AxisDirection direction = AxisDirection.PosZ;
         public string imagePath = null;
         public Texture2D image = null;
@@ -36,16 +36,15 @@ namespace device {
                 emittingBeam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;
             }
         }
-        
-        public override void onBeamHit(ref Beam beam) {
-            space.consumeBeam(ref beam);
-        }
 
         public override void onBeamIdChanged(ref Beam beam, Beam.End beamEnd, ushort newId) {
+            base.onBeamIdChanged(ref beam, beamEnd, newId);
             if (beamEnd == Beam.End.Tail) {
                 emittingBeam.replaceThis(beam.id, newId);
             }
         }
+
+        public override bool isValidGridPos(int3 pos) => GridUtils.isGridCenter(pos);
 
         public override void onRemoved() {
             if (emittingBeam != Beam.INVALID_ID) {
@@ -74,8 +73,8 @@ namespace device {
         private AxisDirection anim_lastDirection;
         private float anim_rotStartTime = float.NegativeInfinity;
 
-        public override void userActionRotate(AxisDirection axis) {
-            base.userActionRotate(axis);
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
+            base.userActionRotate(axis, inplace);
 
             anim_lastDirection = direction;
             anim_rotAxis = axis;

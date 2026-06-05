@@ -4,7 +4,7 @@ using UnityEngine;
 using utils;
 
 namespace device {
-    public class BlockerDevice : SimpleGridDevice {
+    public abstract class BeamBlockingDevice : SimpleGridDevice {
         private ByteEnumMap<AxisDirection, ushort> consumingBeams = new(6, Beam.INVALID_ID);
 
         public override void onBeamHit(ref Beam beam) {
@@ -36,6 +36,11 @@ namespace device {
             
             base.onRemoved();
         }
+    }
+    
+    public sealed class BlockerDevice : BeamBlockingDevice {
+        /// null represents a cube
+        // private Axis? axis = null; // todo
 
         private static Mesh MESH;
         private static Material MATERIAL;

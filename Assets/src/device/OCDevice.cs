@@ -61,7 +61,7 @@ namespace device {
 
         public abstract Bounds getVisualBox();
 
-        public virtual void userActionRotate(AxisDirection axis) {
+        public virtual void userActionRotate(AxisDirection axis, bool inplace) {
             assertNotInSpace();
         }
 

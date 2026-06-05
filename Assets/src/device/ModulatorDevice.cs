@@ -52,6 +52,8 @@ namespace device {
             }
         }
 
+        public override bool isValidGridPos(int3 pos) => GridUtils.isGridCenter(pos);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void handleInputBeam(ref Beam beam, ushort id) {
             if (beam.direction.axis() == modulatingAxis) {
@@ -180,8 +182,8 @@ namespace device {
             base.onRemoved();
         }
 
-        public override void userActionRotate(AxisDirection axis) {
-            base.userActionRotate(axis);
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
+            base.userActionRotate(axis, inplace);
             modulatingAxis = modulatingAxis.rotate(axis.axis());
             modulatorAxis = modulatorAxis.rotate(axis.axis());
         }

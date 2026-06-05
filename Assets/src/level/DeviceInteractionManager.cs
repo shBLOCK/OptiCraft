@@ -82,20 +82,20 @@ namespace level {
             if (grabbedDevice != null) {
                 grabbedDevice.render();
 
-                if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY);
-                if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY);
+                if (inputActions.Player.DeviceRotateCCW.triggered) grabbedDevice.userActionRotate(AxisDirection.NegY, inplace: false);
+                if (inputActions.Player.DeviceRotateCW.triggered) grabbedDevice.userActionRotate(AxisDirection.PosY, inplace: false);
 
                 if (new Plane(new float3(0f, 1f, 0f), new float3(0f, -1f, 0f)).Raycast(mouseRay, out var dist)) {
                     var pos = new float3(mouseRay.GetPoint(dist));
                     pos.y = 0f;
                     if (grabbedDevice is SimpleGridDevice simpleGridDevice) {
-                        simpleGridDevice._tmp_setGridPos(pos.rint());
+                        simpleGridDevice._tmp_setGridPos(simpleGridDevice.findGridPosForPlacement(pos));
                     }
                 }
 
                 if (inputActions.Player.DeviceGrab.triggered && !mouseOnGui) {
                     if (grabbedDevice is SimpleGridDevice simpleGridDevice) {
-                        if (simulator.rootSpace.getDeviceAt(simpleGridDevice.gridPos) != null) goto skip;
+                        if (!simpleGridDevice.isCurrentGridPosValidInSpace(simulator.rootSpace)) goto skip;
                     }
 
                     simulator.rootSpace.addDevice(grabbedDevice);
@@ -123,7 +123,7 @@ namespace level {
                     simulator.rootSpace.removeDevice(hoveredDevice);
 
                     if (rotationAxis != null) {
-                        hoveredDevice.userActionRotate(rotationAxis.Value);
+                        hoveredDevice.userActionRotate(rotationAxis.Value, inplace: true);
                     }
 
                     if (inputActions.Player.DeviceGrab.triggered && !mouseOnGui) {

@@ -55,6 +55,8 @@ namespace device {
             }
         }
 
+        public override bool isValidGridPos(int3 pos) => GridUtils.isGridCenter(pos);
+
         public override void reset() {
             inputBeam = Beam.INVALID_ID;
             Array.Fill(outputBeams, Beam.INVALID_ID);
@@ -97,7 +99,7 @@ namespace device {
                 new Bounds(new float3(gridPos) + inputDirection.float3(0.75f), new float3(0.1f)), Color.white);
         }
 
-        public override void userActionRotate(AxisDirection axis) {
+        public override void userActionRotate(AxisDirection axis, bool inplace) {
             inputDirection = inputDirection.rotate(axis);
             redDirection = redDirection.rotate(axis);
         }

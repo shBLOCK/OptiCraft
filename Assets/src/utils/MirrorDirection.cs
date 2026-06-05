@@ -105,30 +105,24 @@ namespace utils {
             }
         }
 
-        public enum RotateStepType : byte {
-            None,
-            Deg45,
-            Deg90
-        }
-
         public static MirrorDirection rotateStep(
             this MirrorDirection md,
             AxisDirection axis,
-            out RotateStepType rotateStepType
+            out int _45degSteps
         ) {
             var dir1 = md.dirA();
             var dir2 = md.dirB();
             if (dir1.axis() == axis.axis() && dir2.axis() == axis.axis()) {
-                rotateStepType = RotateStepType.None;
+                _45degSteps = 0;
                 return md;
             }
 
             if (dir1.axis() == axis.axis() || dir2.axis() == axis.axis()) {
-                rotateStepType = RotateStepType.Deg90;
+                _45degSteps = 2;
                 dir1 = dir1.rotate(axis);
                 dir2 = dir2.rotate(axis);
             } else {
-                rotateStepType = RotateStepType.Deg45;
+                _45degSteps = 1;
                 if (dir1 == dir2) {
                     dir2 = dir2.rotate(axis);
                 } else {
