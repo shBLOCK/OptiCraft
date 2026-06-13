@@ -143,7 +143,7 @@ namespace device {
                 var size = modulatingBeam.image.size;
                 var imageData = bidm.addNew(size);
                 //TODO: handle orientation
-                outputImage = new BeamImage(imageData.id, size, BeamImageOrientation.PosXPosY, 0, 1f, 0f);
+                outputImage = new BeamImage(imageData.id, size, Orientation2D.PosXPosY, 0, 1f, 0f);
                 cmds.SetComputeTextureParam(CS, CSK, uOutputImage, imageData._tmp_getRT());
                 cmds.dispatchCompute2D(CS, CSK, size);
             }

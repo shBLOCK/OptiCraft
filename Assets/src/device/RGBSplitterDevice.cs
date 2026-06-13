@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Text.Json.Nodes;
-using core;
 using core.beam;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.Rendering;
 using utils;
-using Vertx.Debugging;
 
 namespace device {
     public class RGBSplitterDevice : SimpleGridDevice {
@@ -26,7 +23,12 @@ namespace device {
                     .emitBeam(new Beam(
                         gridPos, redDirection,
                         beam.image.modulated(new float4(1, 0, 0, 0))
-                            .withOrientation(beam.image.orientation.reflect(beam.direction.opposite(), redDirection))
+                            .withOrientation(
+                                beam.image.orientation
+                                    .inverse()
+                                    .reflect(beam.direction.opposite(), redDirection)
+                                    .inverse()
+                            )
                     )).id;
                 outputBeams[1] = space
                     .emitBeam(new Beam(gridPos, greenDirection, beam.image.modulated(new float4(0, 1, 0, 0)))).id;
@@ -34,7 +36,12 @@ namespace device {
                     .emitBeam(new Beam(
                         gridPos, blueDirection,
                         beam.image.modulated(new float4(0, 0, 1, 0))
-                            .withOrientation(beam.image.orientation.reflect(beam.direction.opposite(), blueDirection))
+                            .withOrientation(
+                                beam.image.orientation
+                                    .inverse()
+                                    .reflect(beam.direction.opposite(), blueDirection)
+                                    .inverse()
+                            )
                     )).id;
             }
         }

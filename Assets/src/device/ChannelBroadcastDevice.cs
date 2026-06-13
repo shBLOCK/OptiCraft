@@ -34,7 +34,7 @@ namespace device {
                     var size = beam.image.size;
                     var imageData = bidm.addNew(size);
                     outputImage = new BeamImage(imageData.id, size,
-                        BeamImageOrientation.PosXPosY, 0, 1f, 0f);
+                        Orientation2D.PosXPosY, 0, 1f, 0f);
                     var cmds = space.simulator.cmds;
                     beam.image.setToShader(bidm, cmds, CS, CSK, uInputImage);
                     cmds.SetComputeTextureParam(CS, CSK, uOutputImage, imageData._tmp_getRT());

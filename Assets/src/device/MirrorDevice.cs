@@ -13,7 +13,14 @@ namespace device {
             if (mirrorDir.reflect(beam.direction.opposite(), out var reflectDir, out var isFrontSide)) {
                 if (isFrontSide || doubleSided) {
                     var image = beam.image;
-                    var orientation = image.orientation.reflect(beam.direction.opposite(), reflectDir);
+                    var orientation =
+                        image.orientation
+                            .inverse()
+                            .reflect(beam.direction.opposite(), reflectDir)
+                            .inverse();
+                    // var transform = Orientation2D.PosXPosY.reflect(beam.direction.opposite(), reflectDir);
+                    // var orientation = image.orientation.inverse().mul(transform.inverse().mul(image.orientation));
+                    // var orientation = transform.mul(image.orientation.inverse()).inverse();
                     beams[beam.direction.opposite()] = new BeamIOPair(
                         beam.id,
                         space.emitBeam(new Beam(gridPos, reflectDir, image.withOrientation(orientation))).id

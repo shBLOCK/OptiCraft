@@ -113,6 +113,8 @@ namespace device {
             Graphics.RenderMesh(new RenderParams(MAT_FILM), MESH_FILM, 0, modelMat);
         }
 
+        public override Bounds getVisualBox() => new(gridPos.f3(), axis.float3(0.3f, 1.5f));
+
         private static readonly OCDeviceType<NegatorDevice> _TYPE = new("negator");
         public override OCDeviceType TYPE => _TYPE;
 

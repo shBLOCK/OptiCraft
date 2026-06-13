@@ -31,6 +31,15 @@ namespace device {
             _tmpDrawIO();
         }
 
+        public override Bounds getVisualBox() {
+            if (mirrorDir.dirA() != mirrorDir.dirB()) {
+                return new Bounds(gridPos.f3(), 1.5f.f3());
+            } else {
+                var dir = mirrorDir.dirA();
+                return new Bounds(gridPos.f3(), dir.axis().float3(0.3f, 1.5f));
+            }
+        }
+
         public override void beamRendering_configureBeamEnd(
             in Beam beam, Beam.End beamEnd, AxisDirection enterDir, float3 endPos,
             List<Vector4> clipPlanesData, out float boundsOffset

@@ -8,6 +8,7 @@ using UnityEngine.Rendering;
 using utils;
 
 namespace render {
+    [RequireComponent(typeof(Simulator))]
     public class BeamRenderer : MonoBehaviour {
         public float beamSize = 1f;
 
@@ -122,7 +123,7 @@ namespace render {
 
             var simSpace = simulator.rootSpace;
             foreach (var beam in simSpace.enumerateBeams()) {
-                var basis = beam.image.orientation.basis(beam.direction.axis());
+                var uvBasis = beam.image.orientation.inverse().basis(beam.direction.axis());
                 float3 tailPos = beam.tailPos;
                 float3 headPos = beam.headPos;
                 if (!beam.wasBeingEmitted) tailPos -= beam.direction.float3() * (1f - simulator.partialTick);
@@ -163,7 +164,7 @@ namespace render {
                 if ((boundsTail == boundsHead).all()) continue;
                 var bounds = new Bounds(
                     (boundsHead + boundsTail) / 2f,
-                    math.abs((boundsHead - boundsTail) + basis.x.float3(beamSize) + basis.y.float3(beamSize))
+                    math.abs((boundsHead - boundsTail) + uvBasis.x.float3(beamSize) + uvBasis.y.float3(beamSize))
                 );
 
                 if (!GeometryUtility.TestPlanesAABB(camPlanes, bounds)) continue;
@@ -179,11 +180,11 @@ namespace render {
 
                 renderParams.matProps.SetVector(uBeamDir, beam.direction.float3().f4());
                 renderParams.matProps.SetVector(uBeamSize, new float2(beamSize).f4());
-                renderParams.matProps.SetVector(uBeamBasisX, basis.x.float3().f4());
-                renderParams.matProps.SetVector(uBeamBasisY, basis.y.float3().f4());
+                renderParams.matProps.SetVector(uBeamBasisX, uvBasis.x.float3().f4());
+                renderParams.matProps.SetVector(uBeamBasisY, uvBasis.y.float3().f4());
                 var beamToCam = camPos - tailPos;
                 var viewRayOriginOnBeamBasis = new float2(
-                    beamToCam.dot(basis.x.float3()), beamToCam.dot(basis.y.float3())
+                    beamToCam.dot(uvBasis.x.float3()), beamToCam.dot(uvBasis.y.float3())
                 );
                 renderParams.matProps.SetVector(uViewRayOriginOnBeamBasis, viewRayOriginOnBeamBasis.f4());
                 renderParams.matProps.SetVectorArray(uClipPlanes, uClipPlanesBuffer);

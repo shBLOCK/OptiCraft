@@ -1,0 +1,5 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Template name="GameLevelInfoUI" src="project://database/Assets/src/level/GameLevelInfoUI.uxml?fileID=9197481963319205126&amp;guid=a1312124281ca9f4f916247a8c1d5961&amp;type=3#GameLevelInfoUI"/>
+    <Style src="project://database/Assets/assets/ui/common.uss?fileID=7433441132597879392&amp;guid=782e96c3b8d552449bdf5bea780efd7b&amp;type=3#common"/>
+    <ui:Instance template="GameLevelInfoUI" name="GameLevelInfoUI" class="panel" style="width: 25%; max-height: 100%;"/>
+</ui:UXML>

@@ -8,6 +8,7 @@ using utils;
 using Vertx.Debugging;
 
 namespace level {
+    [RequireComponent(typeof(Simulator))]
     public class DeviceInteractionManager : MonoBehaviour {
         private Simulator simulator;
         private InputSystem_Actions inputActions;
@@ -64,6 +65,8 @@ namespace level {
             }
         }
 
+        private const float DEVICE_BOUNDS_EXPANSION = 0.1f;
+
         private void Update() {
             var mouseOnGui = GUIUtility.hotControl != 0;
 
@@ -71,7 +74,9 @@ namespace level {
             hoveredDevice = null;
             if (grabbedDevice == null) {
                 foreach (var device in simulator.rootSpace.enumerateDevices()) {
-                    if (device.getVisualBox().intersectRay(mouseRay, out var normal)) {
+                    var bounds = device.getVisualBox();
+                    bounds.Expand(DEVICE_BOUNDS_EXPANSION);
+                    if (bounds.intersectRay(mouseRay, out var normal)) {
                         hoveredDevice = device;
                         hoveredDeviceNormal = normal;
                         break;
@@ -110,7 +115,7 @@ namespace level {
 
             if (hoveredDevice != null) {
                 var bounds = hoveredDevice.getVisualBox();
-                bounds.Expand(0.1f);
+                bounds.Expand(DEVICE_BOUNDS_EXPANSION);
                 DebugUtils.drawBoundsWireframe(bounds, Color.HSVToRGB(math.frac(Time.time), 1f, 0.8f));
 
                 D.raw(new Shape.Text(bounds.center, hoveredDevice.TYPE.id, Camera.main), Color.gray);

@@ -61,5 +61,8 @@ namespace utils {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int cBitOr(this int3 value) => value.x | value.y | value.z;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float3 f3(this int3 value) => math.float3(value);
     }
 }

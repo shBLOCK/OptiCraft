@@ -89,41 +89,52 @@ namespace device {
                     if (state.frontDirty || state.backDirty) {
                         state.frontDirty = state.backDirty = false;
 
+                        var (frontInDir, frontReflectDir) = mirrorDir.getDirOnAxisAndOtherDir(axis);
+
                         if (state.frontOutput != Beam.INVALID_ID) space.stopEmitBeam(state.frontOutput);
                         if (state.backOutput != Beam.INVALID_ID) space.stopEmitBeam(state.backOutput);
 
                         var bidm = space.simulator.beamImageDataManager;
-                        BeamImage outputImage = default;
+                        BeamImage frontOutputImage = default;
                         var hasOutput = false;
                         if (state.frontInput != Beam.INVALID_ID && state.backInput != Beam.INVALID_ID) {
                             hasOutput = true;
                             ref var frontBeam = ref space.getBeam(state.frontInput);
                             ref var backBeam = ref space.getBeam(state.backInput);
                             if (frontBeam.image.isSinglePixel && backBeam.image.isSinglePixel) {
-                                outputImage =
+                                frontOutputImage =
                                     BeamImage.singlePixel(frontBeam.image.modulation + backBeam.image.modulation);
                             } else {
                                 var size = math.max(frontBeam.image.size, backBeam.image.size);
-                                outputImage = new BeamImage(
+                                frontOutputImage = new BeamImage(
                                     bidm.addNew(size).id,
                                     size, // TODO
-                                    BeamImageOrientation.PosXPosY, // TODO
+                                    Orientation2D.PosXPosY,
                                     0,
                                     1f, 0f
                                 );
                                 var cmds = space.simulator.cmds;
-                                frontBeam.image.setToShader(bidm, cmds, CS, CSK, uInputAImage);
+                                frontBeam.image.setToShader(
+                                    bidm, cmds, CS, CSK, uInputAImage,
+                                    Orientation2D.PosXPosY.reflect(frontInDir, frontReflectDir)
+                                );
                                 backBeam.image.setToShader(bidm, cmds, CS, CSK, uInputBImage);
                                 cmds.SetComputeTextureParam(CS, CSK, uOutputImage,
-                                    outputImage.getData(bidm)._tmp_getRT());
+                                    frontOutputImage.getData(bidm)._tmp_getRT());
                                 cmds.dispatchCompute2D(CS, CSK, size);
                             }
                         } else {
                             if (state.frontInput != Beam.INVALID_ID) {
-                                outputImage = space.getBeam(state.frontInput).image;
+                                frontOutputImage = space.getBeam(state.frontInput).image;
+                                frontOutputImage = frontOutputImage.withOrientation(
+                                    frontOutputImage.orientation
+                                        .inverse()
+                                        .reflect(frontInDir, frontReflectDir)
+                                        .inverse()
+                                );
                                 hasOutput = true;
                             } else if (state.backInput != Beam.INVALID_ID) {
-                                outputImage = space.getBeam(state.backInput).image;
+                                frontOutputImage = space.getBeam(state.backInput).image;
                                 hasOutput = true;
                             }
                         }
@@ -131,10 +142,15 @@ namespace device {
                         state.oldFrontInputImage.decRef(bidm);
                         state.oldBackInputImage.decRef(bidm);
                         if (hasOutput) {
-                            var (inDir, reflectDir) = mirrorDir.getDirOnAxisAndOtherDir(axis);
-                            var frontOutput = space.emitBeam(new Beam(gridPos, reflectDir, outputImage));
-                            var backOutput = space.emitBeam(new Beam(gridPos, inDir.opposite(), outputImage));
-                            
+                            var backOutputImage = frontOutputImage.withOrientation(
+                                frontOutputImage.orientation
+                                    .inverse()
+                                    .antiReflect(frontReflectDir, frontInDir.opposite())
+                                    .inverse()
+                            );
+                            var frontOutput = space.emitBeam(new Beam(gridPos, frontReflectDir, frontOutputImage));
+                            var backOutput = space.emitBeam(new Beam(gridPos, frontInDir.opposite(), backOutputImage));
+
                             state.frontOutput = frontOutput.id;
                             if (state.frontInput != Beam.INVALID_ID) {
                                 state.oldFrontInputImage = space.getBeam(state.frontInput).image;
@@ -142,6 +158,7 @@ namespace device {
                             } else {
                                 state.oldFrontInputImage = BeamImage.DUMMY;
                             }
+
                             state.backOutput = backOutput.id;
                             if (state.backInput != Beam.INVALID_ID) {
                                 state.oldBackInputImage = space.getBeam(state.backInput).image;
@@ -179,14 +196,14 @@ namespace device {
 
             base.onRemoved();
         }
-        
+
         private static Mesh MESH_FRAME_90DEG;
         private static Mesh MESH_MIRROR_90DEG;
         private static Mesh MESH_FRAME_45DEG;
         private static Mesh MESH_MIRROR_45DEG;
         private static Material MAT_FRAME;
         private static Material MAT_MIRROR;
-        
+
         [RuntimeInitializeOnLoadMethod]
         private static void LOAD_MODEL() {
             var obj = Resources.Load<GameObject>("model/device/mirror");
@@ -197,10 +214,10 @@ namespace device {
             MAT_FRAME = Resources.Load<Material>("material/device/beam_splitter/frame");
             MAT_MIRROR = Resources.Load<Material>("material/device/beam_splitter/mirror");
         }
-        
+
         public override void render() {
             getRenderParamsWithAnimation(out var visualMirrorDir, out var modelMat);
-            
+
             var (frame, mirror) = visualMirrorDir.dirA() == visualMirrorDir.dirB()
                 ? (MESH_FRAME_90DEG, MESH_MIRROR_90DEG)
                 : (MESH_FRAME_45DEG, MESH_MIRROR_45DEG);

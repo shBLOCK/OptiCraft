@@ -30,7 +30,7 @@ namespace device {
                 } else {
                     var data = space.simulator.beamImageDataManager.addNew((uint2)image.size());
                     data.blitFromTexture(image);
-                    beamImage = new BeamImage(data.id, data.size, BeamImageOrientation.PosXPosY, 0, color, 0f);
+                    beamImage = new BeamImage(data.id, data.size, Orientation2D.PosXPosY, 0, color, 0f);
                 }
 
                 emittingBeam = space.emitBeam(new Beam(gridPos.offset(direction), direction, beamImage)).id;

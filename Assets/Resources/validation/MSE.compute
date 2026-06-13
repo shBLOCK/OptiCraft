@@ -1,0 +1,21 @@
+﻿#pragma kernel MSE
+
+#include "Assets/assets/shader_include/beam_image.hlsl"
+#include "Assets/assets/shader_include/compute_utils.hlsl"
+
+DECLARE_BEAM_IMAGE(uInputImage);
+Texture2D uReferenceImage;
+RWTexture2D<float> uOutputImage;
+SamplerState PointClampSampler;
+
+[numthreads(16,16,1)]
+void MSE(uint3 id : SV_DispatchThreadID) {
+    float2 uv;
+    if (!dispatchIdToImageUV(id.xy, uOutputImage, uv)) return;
+
+    float4 inputValue = sampleBeamImage(uInputImage, uv, PointClampSampler);
+    float4 referenceValue = uReferenceImage.SampleLevel(PointClampSampler, uv, 0);
+    float mse = dot(inputValue, referenceValue);
+
+    uOutputImage[id.xy] = mse;
+}

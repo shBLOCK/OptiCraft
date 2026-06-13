@@ -19,6 +19,9 @@ namespace utils {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int intValue(this Sign sign) => sign == Sign.Neg ? -1 : 1;
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static Sign signEnum(this int value) => (Sign)(~(uint)value >> 31);
     }
 
     public enum Axis : byte {
@@ -33,18 +36,18 @@ namespace utils {
             (AxisDirection)(((byte)axis << 1) | (byte)sign);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 float3(this Axis axis, float length = 1f) => axis switch {
-            Axis.X => new float3(length, 0, 0),
-            Axis.Y => new float3(0, length, 0),
-            Axis.Z => new float3(0, 0, length),
+        public static float3 float3(this Axis axis, float value = 1f, float zero = 0f) => axis switch {
+            Axis.X => new float3(value, zero, zero),
+            Axis.Y => new float3(zero, value, zero),
+            Axis.Z => new float3(zero, zero, value),
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
         
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int3 int3(this Axis axis, int length = 1) => axis switch {
-            Axis.X => new int3(length, 0, 0),
-            Axis.Y => new int3(0, length, 0),
-            Axis.Z => new int3(0, 0, length),
+        public static int3 int3(this Axis axis, int value = 1) => axis switch {
+            Axis.X => new int3(value, 0, 0),
+            Axis.Y => new int3(0, value, 0),
+            Axis.Z => new int3(0, 0, value),
             _ => throw new ArgumentOutOfRangeException(nameof(axis), axis, null)
         };
 
@@ -84,24 +87,24 @@ namespace utils {
 
     public static class AxisDirectionExtensions {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float3 float3(this AxisDirection direction, float length = 1f) => direction switch {
-            AxisDirection.NegX => new float3(-length, 0, 0),
-            AxisDirection.PosX => new float3(length, 0, 0),
-            AxisDirection.NegY => new float3(0, -length, 0),
-            AxisDirection.PosY => new float3(0, length, 0),
-            AxisDirection.NegZ => new float3(0, 0, -length),
-            AxisDirection.PosZ => new float3(0, 0, length),
+        public static float3 float3(this AxisDirection direction, float value = 1f, float zero = 0f) => direction switch {
+            AxisDirection.NegX => new float3(-value, zero, zero),
+            AxisDirection.PosX => new float3(value, zero, zero),
+            AxisDirection.NegY => new float3(zero, -value, zero),
+            AxisDirection.PosY => new float3(zero, value, zero),
+            AxisDirection.NegZ => new float3(zero, zero, -value),
+            AxisDirection.PosZ => new float3(zero, zero, value),
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int3 int3(this AxisDirection direction, int length = 1) => direction switch {
-            AxisDirection.NegX => new int3(-length, 0, 0),
-            AxisDirection.PosX => new int3(length, 0, 0),
-            AxisDirection.NegY => new int3(0, -length, 0),
-            AxisDirection.PosY => new int3(0, length, 0),
-            AxisDirection.NegZ => new int3(0, 0, -length),
-            AxisDirection.PosZ => new int3(0, 0, length),
+        public static int3 int3(this AxisDirection direction, int value = 1) => direction switch {
+            AxisDirection.NegX => new int3(-value, 0, 0),
+            AxisDirection.PosX => new int3(value, 0, 0),
+            AxisDirection.NegY => new int3(0, -value, 0),
+            AxisDirection.PosY => new int3(0, value, 0),
+            AxisDirection.NegZ => new int3(0, 0, -value),
+            AxisDirection.PosZ => new int3(0, 0, value),
             _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
         };
 

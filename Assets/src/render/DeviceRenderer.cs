@@ -1,8 +1,8 @@
 ﻿using core;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace render {
+    [RequireComponent(typeof(Simulator))]
     public class DeviceRenderer : MonoBehaviour {
         private Simulator simulator;
 

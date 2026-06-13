@@ -10,7 +10,7 @@ namespace core.beam {
         public static readonly BeamImage DUMMY = new BeamImage(
             BeamImageData.INVALID_ID,
             0,
-            (BeamImageOrientation)byte.MaxValue,
+            (Orientation2D)byte.MaxValue,
             0,
             float.NaN,
             float.NaN
@@ -32,7 +32,12 @@ namespace core.beam {
         private readonly byte2 _size;
 
         public uint2 size => (uint2)((byte2)(_size - 1) + 1);
-        public readonly BeamImageOrientation orientation;
+
+        /// The 2D basis in UV space used when sampling the image.
+        /// (column 0 is the +u axis and column 1 is the +v axis)
+        /// In 3D, this 2D basis is in the UV space represented by Axis.orthoBasis() of the axis of the beam.
+        public readonly Orientation2D orientation;
+
         public readonly byte2 offset;
         public readonly float4 modulation;
         public readonly float4 bias;
@@ -41,7 +46,7 @@ namespace core.beam {
         private BeamImage(
             ushort dataId,
             byte2 _size,
-            BeamImageOrientation orientation,
+            Orientation2D orientation,
             byte2 offset,
             float4 modulation,
             float4 bias
@@ -57,7 +62,7 @@ namespace core.beam {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BeamImage(ushort dataId,
             uint2 size,
-            BeamImageOrientation orientation,
+            Orientation2D orientation,
             byte2 offset,
             float4 modulation,
             float4 bias
@@ -67,7 +72,7 @@ namespace core.beam {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static BeamImage singlePixel(float4 color) =>
-            new(BeamImageData.INVALID_ID, 1, BeamImageOrientation.PosXPosY, 0, color, float4.zero);
+            new(BeamImageData.INVALID_ID, 1, Orientation2D.PosXPosY, 0, color, float4.zero);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public BeamImage modulated(float4 modulator) =>
@@ -78,7 +83,7 @@ namespace core.beam {
             new(dataId, _size, orientation, offset, modulation, bias + biasValue);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public BeamImage withOrientation(BeamImageOrientation newOrientation) =>
+        public BeamImage withOrientation(Orientation2D newOrientation) =>
             new(dataId, _size, newOrientation, offset, modulation, bias);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -121,26 +126,26 @@ namespace core.beam {
             ComputeShader cs,
             int kernel,
             BeamImageShaderUniform uniform,
-            BeamImageOrientation orientation
+            Orientation2D basis = Orientation2D.PosXPosY
         ) {
+            var uvBasis = basis.mul(orientation.inverse()).inverse();
             var transform = float2x3.zero;
             if (!isSinglePixel) {
                 var data = getData(manager);
                 cmds.SetComputeTextureParam(cs, kernel, uniform.texture, data._tmp_getRT());
                 var uvSize = new float2(size) / data.size;
-                if (!orientation.isXYSwapped()) {
-                    transform.c0.x = uvSize.x * orientation.xSign().floatValue();
-                    transform.c1.y = uvSize.y * orientation.ySign().floatValue();
+                if (!uvBasis.isXYSwapped()) {
+                    transform.c0.x = uvSize.x * uvBasis.xSign().floatValue();
+                    transform.c1.y = uvSize.y * uvBasis.ySign().floatValue();
                 } else {
-                    transform.c0.y = uvSize.x * orientation.xSign().floatValue();
-                    transform.c1.x = uvSize.y * orientation.ySign().floatValue();
+                    transform.c0.y = uvSize.x * uvBasis.xSign().floatValue();
+                    transform.c1.x = uvSize.y * uvBasis.ySign().floatValue();
                 }
 
                 transform.c2 = new float2(
-                    orientation.xSign() == Sign.Neg ? 1f : 0f,
-                    orientation.ySign() == Sign.Neg ? 1f : 0f
-                ) * uvSize;
-                if (orientation.isXYSwapped()) transform.c2 = transform.c2.yx;
+                    uvBasis.xSign() == Sign.Neg ? 1f : 0f,
+                    uvBasis.ySign() == Sign.Neg ? 1f : 0f
+                ) * (uvBasis.isXYSwapped() ? uvSize.yx : uvSize);
                 transform.c2 += new float2(offset.x, offset.y);
             } else {
                 cmds.SetComputeTextureParam(cs, kernel, uniform.texture, SINGLE_PIXEL_RGBA_ONES_TEXTURE);
@@ -158,15 +163,6 @@ namespace core.beam {
             cmds.SetComputeVectorParam(cs, uniform.modulation, modulation);
             cmds.SetComputeVectorParam(cs, uniform.bias, bias);
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void setToShader(
-            BeamImageData.Manager manager,
-            CommandBuffer cmds,
-            ComputeShader cs,
-            int kernel,
-            BeamImageShaderUniform uniform
-        ) => setToShader(manager, cmds, cs, kernel, uniform, orientation);
     }
 
     public readonly struct BeamImageShaderUniform {

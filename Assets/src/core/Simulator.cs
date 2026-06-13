@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Nodes;
+﻿using System;
+using System.Text.Json.Nodes;
 using core.beam;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -20,14 +21,14 @@ namespace core {
 
         public void tick() {
             Debug.Log($"tick {tickNumber}");
-            
+
             cmds.Clear();
             rootSpace.tick();
-            
+
             //TODO: maybe manage this somewhere else
             Graphics.ExecuteCommandBuffer(cmds);
             cmds.Clear();
-            
+
             tickNumber++;
         }
 
@@ -52,6 +53,14 @@ namespace core {
             partialTick = data["partialTick"].GetValue<float>();
             rootSpace = new SimSpace(this);
             rootSpace.load(data["rootSpace"].AsObject());
+        }
+
+        public abstract record Event;
+
+        public event Action<Event> onEvent;
+        
+        public void dispatchEvent(Event @event) {
+            onEvent?.Invoke(@event);
         }
     }
 }
